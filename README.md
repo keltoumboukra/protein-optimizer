@@ -1,13 +1,11 @@
-# BugBrain
+# Protein Expression Optimization System
 
-ML-Powered Bug Analysis System - Toy Project
-
-A simplified version of the bug analysis system for practicing key components and workflows.
+ML-Powered Protein Expression Optimization Platform - A comprehensive system for predicting and optimizing protein expression conditions.
 
 ## Project Structure
 
 ```
-bugbrain/
+protein_optimizer/
 ├── dashboard/          # Streamlit dashboard
 ├── data/              # Mock data and data processing
 ├── src/
@@ -19,11 +17,20 @@ bugbrain/
 
 ## Features
 
-- Mock data generation for lab automation bugs
-- Basic ML model for bug prediction
+- Mock data generation for protein expression experiments
+- ML model for predicting optimal expression conditions
 - Interactive dashboard for visualization
 - REST API for model inference
 - Test suite for key components
+
+## Future Expansion Possibilities
+
+- Integration with AlphaFold for structure prediction
+- Connection to UniProt database for protein properties
+- Integration with PDB database for structural data
+- Use of ESM-2 or similar models for sequence analysis
+- Integration with BRENDA database for enzyme information
+- Connection to KEGG database for pathway analysis
 
 ## Setup
 

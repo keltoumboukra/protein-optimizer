@@ -3,37 +3,44 @@ import numpy as np
 from datetime import datetime, timedelta
 from typing import List, Dict
 
-class MockBugDataGenerator:
+class MockProteinExpressionDataGenerator:
     def __init__(self, num_records: int = 100):
         self.num_records = num_records
-        self.instruments = [
-            "Hamilton", "Tecan", "Beckman", "Agilent", "PerkinElmer"
+        self.host_organisms = [
+            "E. coli", "S. cerevisiae", "P. pastoris", "HEK293", "CHO"
         ]
-        self.problem_types = [
-            "Hardware", "Software", "Calibration", "Sample Processing", "Communication"
+        self.vector_types = [
+            "pET", "pGEX", "pMAL", "pTrc", "pBAD"
         ]
-        self.severity_levels = ["Low", "Medium", "High", "Critical"]
-        self.statuses = ["Open", "In Progress", "Resolved", "Closed"]
+        self.induction_conditions = [
+            "IPTG", "Arabinose", "Methanol", "Galactose", "Tetracycline"
+        ]
+        self.media_types = [
+            "LB", "TB", "M9", "YPD", "CD-CHO"
+        ]
         
     def generate(self, num_records: int = None) -> pd.DataFrame:
-        """Generate mock bug data."""
+        """Generate mock protein expression data."""
         if num_records is None:
             num_records = self.num_records
             
         data = {
-            "ticket_id": [f"BUG-{i:04d}" for i in range(num_records)],
-            "created_date": self._generate_dates(num_records),
-            "instrument": np.random.choice(self.instruments, num_records),
-            "problem_type": np.random.choice(self.problem_types, num_records),
-            "severity": np.random.choice(self.severity_levels, num_records),
-            "status": np.random.choice(self.statuses, num_records),
-            "resolution_time_hours": np.random.exponential(24, num_records),
+            "experiment_id": [f"EXP-{i:04d}" for i in range(num_records)],
+            "date": self._generate_dates(num_records),
+            "host_organism": np.random.choice(self.host_organisms, num_records),
+            "vector_type": np.random.choice(self.vector_types, num_records),
+            "induction_condition": np.random.choice(self.induction_conditions, num_records),
+            "media_type": np.random.choice(self.media_types, num_records),
+            "temperature": np.random.uniform(20, 37, num_records),
+            "induction_time": np.random.uniform(2, 24, num_records),
+            "expression_level": np.random.uniform(0, 100, num_records),
+            "solubility": np.random.uniform(0, 100, num_records),
             "description": [self._generate_description() for _ in range(num_records)],
-            "solution": [self._generate_solution() for _ in range(num_records)]
+            "notes": [self._generate_notes() for _ in range(num_records)]
         }
         
         df = pd.DataFrame(data)
-        df["created_date"] = pd.to_datetime(df["created_date"])
+        df["date"] = pd.to_datetime(df["date"])
         return df
     
     def _generate_dates(self, num_records: int) -> List[datetime]:
@@ -48,54 +55,55 @@ class MockBugDataGenerator:
         ]
     
     def _generate_description(self) -> str:
-        """Generate a realistic bug description."""
+        """Generate a realistic experiment description."""
         templates = [
-            "Instrument {instrument} failed during {operation} with error code {code}",
-            "Calibration issues detected on {instrument} during {operation}",
-            "Communication timeout between {instrument} and {component}",
-            "Sample processing error on {instrument}: {error_type}"
+            "Expression of {protein} in {host} using {vector} vector",
+            "Optimization of {protein} expression in {host} with {media} media",
+            "Testing {protein} expression under {condition} induction",
+            "Scale-up experiment for {protein} in {host}"
         ]
         
         template = np.random.choice(templates)
-        operations = ["sample loading", "pipetting", "washing", "incubation", "reading"]
-        error_codes = ["E001", "E002", "E003", "E004", "E005"]
-        components = ["deck", "tip rack", "plate reader", "washer", "incubator"]
-        error_types = ["volume mismatch", "position error", "timing issue", "sensor failure"]
+        proteins = ["GFP", "His-tag protein", "Fusion protein", "Enzyme", "Antibody"]
         
         return template.format(
-            instrument=np.random.choice(self.instruments),
-            operation=np.random.choice(operations),
-            code=np.random.choice(error_codes),
-            component=np.random.choice(components),
-            error_type=np.random.choice(error_types)
+            protein=np.random.choice(proteins),
+            host=np.random.choice(self.host_organisms),
+            vector=np.random.choice(self.vector_types),
+            media=np.random.choice(self.media_types),
+            condition=np.random.choice(self.induction_conditions)
         )
     
-    def _generate_solution(self) -> str:
-        """Generate a realistic solution description."""
+    def _generate_notes(self) -> str:
+        """Generate realistic experiment notes."""
         templates = [
-            "Performed {action} on {component}",
-            "Updated {component} firmware to version {version}",
-            "Replaced {component} and recalibrated",
-            "Adjusted {parameter} settings to {value}"
+            "Adjusted {parameter} to {value} for better expression",
+            "Observed {observation} during induction",
+            "Modified {component} protocol to improve {outcome}",
+            "Troubleshooting {issue} with {solution}"
         ]
         
         template = np.random.choice(templates)
-        actions = ["calibration", "maintenance", "cleaning", "reboot", "replacement"]
-        components = ["pipette", "sensor", "motor", "controller", "reader"]
-        versions = ["2.1.0", "2.2.0", "2.3.0", "2.4.0"]
-        parameters = ["speed", "temperature", "pressure", "volume", "timing"]
+        parameters = ["temperature", "induction time", "media composition", "OD600", "pH"]
         values = ["optimal", "recommended", "standard", "default"]
+        observations = ["aggregation", "low yield", "high background", "good expression"]
+        components = ["induction", "harvesting", "lysis", "purification"]
+        outcomes = ["yield", "solubility", "activity", "purity"]
+        issues = ["low expression", "insolubility", "degradation", "contamination"]
+        solutions = ["temperature adjustment", "media optimization", "protocol modification"]
         
         return template.format(
-            action=np.random.choice(actions),
-            component=np.random.choice(components),
-            version=np.random.choice(versions),
             parameter=np.random.choice(parameters),
-            value=np.random.choice(values)
+            value=np.random.choice(values),
+            observation=np.random.choice(observations),
+            component=np.random.choice(components),
+            outcome=np.random.choice(outcomes),
+            issue=np.random.choice(issues),
+            solution=np.random.choice(solutions)
         )
 
 if __name__ == "__main__":
     # Example usage
-    generator = MockBugDataGenerator(num_records=10)
+    generator = MockProteinExpressionDataGenerator(num_records=10)
     df = generator.generate()
     print(df.head()) 

@@ -5,68 +5,76 @@ import pandas as pd
 from datetime import datetime
 import logging
 
-from src.data_pipeline.mock_data import MockBugDataGenerator
-from src.ml_models.predictor import BugPredictor
+from src.data_pipeline.mock_data import MockProteinExpressionDataGenerator
+from src.ml_models.predictor import ProteinExpressionPredictor
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="BugBrain API")
+app = FastAPI(title="Protein Expression Optimization API")
 
 # Initialize components
-generator = MockBugDataGenerator(num_records=1000)
+generator = MockProteinExpressionDataGenerator(num_records=1000)
 train_data = generator.generate()
-predictor = BugPredictor()
+predictor = ProteinExpressionPredictor()
 predictor.train(train_data)
 
-class BugReport(BaseModel):
-    instrument: str
-    problem_type: str
-    severity: str
-    status: str
+class ProteinExpressionRequest(BaseModel):
+    host_organism: str
+    vector_type: str
+    induction_condition: str
+    media_type: str
+    temperature: float
+    induction_time: float
     description: Optional[str] = None
 
     class Config:
         schema_extra = {
             "example": {
-                "instrument": "Hamilton",
-                "problem_type": "Hardware",
-                "severity": "Low",
-                "status": "Open",
-                "description": "Optional description"
+                "host_organism": "E. coli",
+                "vector_type": "pET",
+                "induction_condition": "IPTG",
+                "media_type": "LB",
+                "temperature": 37.0,
+                "induction_time": 4.0,
+                "description": "Expression of GFP in E. coli"
             }
         }
 
 class PredictionResponse(BaseModel):
-    predicted_resolution_time: float
+    predicted_expression_level: float
+    predicted_solubility: float
     feature_importance: dict
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to BugBrain API"}
+    return {"message": "Welcome to Protein Expression Optimization API"}
 
 @app.get("/valid-categories")
 async def get_valid_categories():
     """Get the list of valid categories for each field."""
     return {
-        "instrument": ["Hamilton", "Tecan", "Beckman", "Agilent", "PerkinElmer"],
-        "problem_type": ["Hardware", "Software", "Calibration", "Sample Processing", "Communication"],
-        "severity": ["Low", "Medium", "High", "Critical"],
-        "status": ["Open", "In Progress", "Resolved", "Closed"]
+        "host_organism": ["E. coli", "S. cerevisiae", "P. pastoris", "HEK293", "CHO"],
+        "vector_type": ["pET", "pGEX", "pMAL", "pTrc", "pBAD"],
+        "induction_condition": ["IPTG", "Arabinose", "Methanol", "Galactose", "Tetracycline"],
+        "media_type": ["LB", "TB", "M9", "YPD", "CD-CHO"]
     }
 
 @app.post("/predict", response_model=PredictionResponse)
-async def predict_bug(bug: BugReport):
+async def predict_expression(experiment: ProteinExpressionRequest):
     try:
         # Log the received data
-        logger.info(f"Received bug report: {bug.dict()}")
+        logger.info(f"Received experiment request: {experiment.dict()}")
         
-        # Convert bug report to DataFrame
-        df = pd.DataFrame([bug.dict()])
+        # Convert experiment request to DataFrame
+        df = pd.DataFrame([experiment.dict()])
         
         # Validate required columns
-        required_columns = ["instrument", "problem_type", "severity", "status"]
+        required_columns = [
+            "host_organism", "vector_type", "induction_condition",
+            "media_type", "temperature", "induction_time"
+        ]
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
             raise ValueError(f"Missing required columns: {missing_columns}")
@@ -78,7 +86,8 @@ async def predict_bug(bug: BugReport):
         importance = predictor.get_feature_importance()
         
         return PredictionResponse(
-            predicted_resolution_time=float(prediction),
+            predicted_expression_level=float(prediction[0]),
+            predicted_solubility=float(prediction[1]),
             feature_importance=importance
         )
     except ValueError as e:
@@ -90,14 +99,18 @@ async def predict_bug(bug: BugReport):
 
 @app.get("/generate-sample")
 async def generate_sample():
-    """Generate a sample bug report for testing."""
+    """Generate a sample experiment for testing."""
     sample = generator.generate(num_records=1).iloc[0]
     return {
-        "instrument": sample["instrument"],
-        "problem_type": sample["problem_type"],
-        "severity": sample["severity"],
-        "status": sample["status"],
-        "description": sample["description"]
+        "host_organism": sample["host_organism"],
+        "vector_type": sample["vector_type"],
+        "induction_condition": sample["induction_condition"],
+        "media_type": sample["media_type"],
+        "temperature": sample["temperature"],
+        "induction_time": sample["induction_time"],
+        "description": sample["description"],
+        "expression_level": sample["expression_level"],
+        "solubility": sample["solubility"]
     }
 
 if __name__ == "__main__":

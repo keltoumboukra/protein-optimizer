@@ -13,13 +13,13 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Page config
 st.set_page_config(
-    page_title="BugBrain Dashboard",
-    page_icon="🐛",
+    page_title="Protein Expression Optimization Dashboard",
+    page_icon="🧬",
     layout="wide"
 )
 
 # Title
-st.title("🐛 BugBrain Dashboard")
+st.title("🧬 Protein Expression Optimization Dashboard")
 
 # Sidebar
 st.sidebar.header("Settings")
@@ -54,77 +54,107 @@ if not df.empty:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.subheader("Bug Distribution by Instrument")
-        fig_instrument = px.pie(
-            df,
-            names="instrument",
-            title="Bug Distribution by Instrument"
-        )
-        st.plotly_chart(fig_instrument, use_container_width=True)
+        st.subheader("Expression Distribution by Host Organism")
+        try:
+            fig_host = px.box(
+                df,
+                x="host_organism",
+                y="expression_level",
+                title="Expression Level Distribution by Host Organism"
+            )
+            st.plotly_chart(fig_host, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error creating host organism plot: {str(e)}")
+            st.write("Available columns:", df.columns.tolist())
 
     with col2:
-        st.subheader("Bug Distribution by Problem Type")
-        fig_problem = px.pie(
-            df,
-            names="problem_type",
-            title="Bug Distribution by Problem Type"
-        )
-        st.plotly_chart(fig_problem, use_container_width=True)
+        st.subheader("Expression Distribution by Vector Type")
+        try:
+            fig_vector = px.box(
+                df,
+                x="vector_type",
+                y="expression_level",
+                title="Expression Level Distribution by Vector Type"
+            )
+            st.plotly_chart(fig_vector, use_container_width=True)
+        except Exception as e:
+            st.error(f"Error creating vector type plot: {str(e)}")
+            st.write("Available columns:", df.columns.tolist())
 
-    # Bug Prediction Form
-    st.subheader("Predict Bug Resolution Time")
-    with st.form("bug_prediction_form"):
+    # Expression Prediction Form
+    st.subheader("Predict Protein Expression")
+    with st.form("expression_prediction_form"):
         col1, col2 = st.columns(2)
         
         with col1:
-            instrument = st.selectbox(
-                "Instrument",
-                ["Hamilton", "Tecan", "Beckman", "Agilent", "PerkinElmer"]
+            host_organism = st.selectbox(
+                "Host Organism",
+                ["E. coli", "S. cerevisiae", "P. pastoris", "HEK293", "CHO"]
             )
-            problem_type = st.selectbox(
-                "Problem Type",
-                ["Hardware", "Software", "Calibration", "Sample Processing", "Communication"]
+            vector_type = st.selectbox(
+                "Vector Type",
+                ["pET", "pGEX", "pMAL", "pTrc", "pBAD"]
+            )
+            induction_condition = st.selectbox(
+                "Induction Condition",
+                ["IPTG", "Arabinose", "Methanol", "Galactose", "Tetracycline"]
             )
         
         with col2:
-            severity = st.selectbox(
-                "Severity",
-                ["Low", "Medium", "High", "Critical"]
+            media_type = st.selectbox(
+                "Media Type",
+                ["LB", "TB", "M9", "YPD", "CD-CHO"]
             )
-            status = st.selectbox(
-                "Status",
-                ["Open", "In Progress", "Resolved", "Closed"]
+            temperature = st.slider(
+                "Temperature (°C)",
+                min_value=20.0,
+                max_value=37.0,
+                value=37.0,
+                step=0.5
+            )
+            induction_time = st.slider(
+                "Induction Time (hours)",
+                min_value=2.0,
+                max_value=24.0,
+                value=4.0,
+                step=0.5
             )
         
         description = st.text_area("Description (Optional)")
         
-        submitted = st.form_submit_button("Predict Resolution Time")
+        submitted = st.form_submit_button("Predict Expression")
         
         if submitted:
             # Prepare request data
-            bug_data = {
-                "instrument": instrument,
-                "problem_type": problem_type,
-                "severity": severity,
-                "status": status,
+            experiment_data = {
+                "host_organism": host_organism,
+                "vector_type": vector_type,
+                "induction_condition": induction_condition,
+                "media_type": media_type,
+                "temperature": temperature,
+                "induction_time": induction_time,
                 "description": description
             }
             
             try:
                 # Log the request data
-                st.write("Sending request with data:", json.dumps(bug_data, indent=2))
+                st.write("Sending request with data:", json.dumps(experiment_data, indent=2))
                 
                 # Make API request
                 response = requests.post(
                     "http://localhost:8000/predict",
-                    json=bug_data
+                    json=experiment_data
                 )
                 
                 if response.status_code == 200:
                     result = response.json()
                     
-                    # Display prediction
-                    st.success(f"Predicted Resolution Time: {result['predicted_resolution_time']:.2f} hours")
+                    # Display predictions
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.success(f"Predicted Expression Level: {result['predicted_expression_level']:.2f}%")
+                    with col2:
+                        st.success(f"Predicted Solubility: {result['predicted_solubility']:.2f}%")
                     
                     # Display feature importance
                     st.subheader("Feature Importance")
@@ -147,7 +177,3 @@ if not df.empty:
                 st.write("Full error details:", e)
 else:
     st.warning("Please make sure the FastAPI server is running on http://localhost:8000")
-
-# Footer
-st.markdown("---")
-st.markdown("Built with ❤️ for the Hackathon") 
