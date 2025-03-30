@@ -47,7 +47,7 @@ class BugPredictor:
 
 if __name__ == "__main__":
     # Example usage
-    from data_pipeline.mock_data import MockBugDataGenerator
+    from src.data_pipeline.mock_data import MockBugDataGenerator
     
     # Generate training data
     generator = MockBugDataGenerator(num_records=1000)

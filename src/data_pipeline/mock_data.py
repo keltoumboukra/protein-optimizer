@@ -15,25 +15,28 @@ class MockBugDataGenerator:
         self.severity_levels = ["Low", "Medium", "High", "Critical"]
         self.statuses = ["Open", "In Progress", "Resolved", "Closed"]
         
-    def generate(self) -> pd.DataFrame:
+    def generate(self, num_records: int = None) -> pd.DataFrame:
         """Generate mock bug data."""
+        if num_records is None:
+            num_records = self.num_records
+            
         data = {
-            "ticket_id": [f"BUG-{i:04d}" for i in range(self.num_records)],
-            "created_date": self._generate_dates(),
-            "instrument": np.random.choice(self.instruments, self.num_records),
-            "problem_type": np.random.choice(self.problem_types, self.num_records),
-            "severity": np.random.choice(self.severity_levels, self.num_records),
-            "status": np.random.choice(self.statuses, self.num_records),
-            "resolution_time_hours": np.random.exponential(24, self.num_records),
-            "description": [self._generate_description() for _ in range(self.num_records)],
-            "solution": [self._generate_solution() for _ in range(self.num_records)]
+            "ticket_id": [f"BUG-{i:04d}" for i in range(num_records)],
+            "created_date": self._generate_dates(num_records),
+            "instrument": np.random.choice(self.instruments, num_records),
+            "problem_type": np.random.choice(self.problem_types, num_records),
+            "severity": np.random.choice(self.severity_levels, num_records),
+            "status": np.random.choice(self.statuses, num_records),
+            "resolution_time_hours": np.random.exponential(24, num_records),
+            "description": [self._generate_description() for _ in range(num_records)],
+            "solution": [self._generate_solution() for _ in range(num_records)]
         }
         
         df = pd.DataFrame(data)
         df["created_date"] = pd.to_datetime(df["created_date"])
         return df
     
-    def _generate_dates(self) -> List[datetime]:
+    def _generate_dates(self, num_records: int) -> List[datetime]:
         """Generate random dates within the last 6 months."""
         end_date = datetime.now()
         start_date = end_date - timedelta(days=180)
@@ -41,7 +44,7 @@ class MockBugDataGenerator:
             start_date + timedelta(
                 seconds=np.random.randint(0, int((end_date - start_date).total_seconds()))
             )
-            for _ in range(self.num_records)
+            for _ in range(num_records)
         ]
     
     def _generate_description(self) -> str:

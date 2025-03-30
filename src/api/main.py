@@ -4,8 +4,8 @@ from typing import List, Optional
 import pandas as pd
 from datetime import datetime
 
-from data_pipeline.mock_data import MockBugDataGenerator
-from ml_models.predictor import BugPredictor
+from src.data_pipeline.mock_data import MockBugDataGenerator
+from src.ml_models.predictor import BugPredictor
 
 app = FastAPI(title="BugBrain API")
 
