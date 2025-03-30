@@ -6,6 +6,7 @@ import requests
 from datetime import datetime, timedelta
 import sys
 import os
+import json
 
 # Add the project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -110,6 +111,9 @@ if not df.empty:
             }
             
             try:
+                # Log the request data
+                st.write("Sending request with data:", json.dumps(bug_data, indent=2))
+                
                 # Make API request
                 response = requests.post(
                     "http://localhost:8000/predict",
@@ -136,9 +140,11 @@ if not df.empty:
                     )
                     st.plotly_chart(fig_importance, use_container_width=True)
                 else:
-                    st.error(f"Error making prediction: {response.text}")
+                    error_detail = response.json().get('detail', 'Unknown error')
+                    st.error(f"Error making prediction: {error_detail}")
             except Exception as e:
                 st.error(f"Error making prediction: {str(e)}")
+                st.write("Full error details:", e)
 else:
     st.warning("Please make sure the FastAPI server is running on http://localhost:8000")
 
