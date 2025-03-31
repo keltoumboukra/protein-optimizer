@@ -1,3 +1,3 @@
 """
-Data pipeline module for Protein-optimizer
-""" 
+Data pipeline package for generating and processing protein expression data
+"""

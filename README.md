@@ -36,31 +36,68 @@ protein_optimizer/
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
 ```
 
-2. Start the prediction service:
+2. Install the package with development dependencies:
+```bash
+pip install -e ".[dev]"
+```
+
+This will install all required packages including:
+- Core dependencies (pandas, numpy, scikit-learn, etc.)
+- API dependencies (FastAPI, uvicorn)
+- Visualization dependencies (streamlit, plotly)
+- Development tools (pytest, black, mypy)
+
+Note: Every time you open a new terminal or IDE session, you'll need to reactivate the virtual environment:
+```bash
+# Navigate to the project directory
+cd /path/to/protein-optimizer
+
+# Activate the virtual environment
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# You should see (venv) in your terminal prompt when it's activated
+```
+
+3. Start the prediction service:
 ```bash
 uvicorn src.api.main:app --reload
 ```
 
-3. Launch the dashboard:
+4. Launch the dashboard:
 ```bash
 streamlit run dashboard/app.py
 ```
 
+The dashboard will be available at http://localhost:8501 and the API at http://localhost:8000.
+
 ## Development Guide
 
+The project uses several development tools to ensure code quality:
+
+### Testing
+Run the test suite with coverage report:
 ```bash
-# Run the test suite
-pytest
-
-# Format your code
-black .
-
-# Check typing
-mypy .
+pytest --cov=src tests/
 ```
+
+### Code Formatting
+Format your code using black:
+```bash
+black .
+```
+
+### Type Checking
+Check type annotations with mypy:
+```bash
+mypy src/
+```
+
+### Configuration Files
+- `pytest.ini`: Test configuration
+- `mypy.ini`: Type checking settings
+- `pyproject.toml`: Code formatting rules
 
 ## Future Roadmap
 
