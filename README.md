@@ -15,12 +15,22 @@ A data-driven platform that helps researchers optimize protein expression condit
 
 ```
 protein_optimizer/
-├── dashboard/          # Streamlit-based visualization interface
+├── dashboard/           # Streamlit-based visualization interface
+│   └── app.py          # Main dashboard application with plotly visualizations
 ├── src/
-│   ├── api/           # FastAPI backend service
-│   ├── data_pipeline/ # Data generation and processing
-│   └── ml_models/     # Expression prediction models
-└── tests/             # Test coverage
+│   ├── api/            # FastAPI backend service
+│   │   └── main.py     # API endpoints and server configuration
+│   ├── data_pipeline/  # Data generation and processing
+│   │   └── mock_data.py # Mock data generation for development
+│   └── ml_models/      # Expression prediction models
+│       └── predictor.py # RandomForest-based protein expression predictor
+├── tests/              # Comprehensive test suite
+│   ├── test_api.py     # API endpoint tests
+│   └── test_predictor.py # ML model and data processing tests
+├── setup.py            # Package configuration and dependencies
+├── pytest.ini          # Test configuration settings
+├── mypy.ini           # Type checking configuration
+└── pyproject.toml     # Code formatting and tool settings
 ```
 
 ## Key Features
