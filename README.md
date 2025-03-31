@@ -2,6 +2,8 @@
 
 ML-Powered Protein Expression Optimization Platform - A comprehensive system for predicting and optimizing protein expression conditions.
 
+![Protein Expression Optimization System Architecture](./assets/system_architecture.png)
+
 ## Project Structure
 
 ```
