@@ -1,3 +1,3 @@
 """
-ML models module for BugBrain
+ML models module for Protein-optimizer
 """ 

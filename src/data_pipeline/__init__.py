@@ -1,3 +1,3 @@
 """
-Data pipeline module for BugBrain
+Data pipeline module for Protein-optimizer
 """ 

@@ -1,3 +1,3 @@
 """
-BugBrain - ML-Powered Bug Analysis System
+Protein-optimizer - ML-Powered Protein Optimization System
 """ 
