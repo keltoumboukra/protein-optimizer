@@ -67,15 +67,33 @@ class PredictionHistory:
                     filepath = os.path.join(self.storage_path, filename)
                     try:
                         with open(filepath, "r") as f:
-                            prediction = json.load(f)
-                            predictions.append(prediction)
-                    except json.JSONDecodeError:
-                        continue  # Skip invalid JSON files
+                            data = json.load(f)
+                            
+                            # Handle both single prediction dictionaries and arrays of predictions
+                            if isinstance(data, dict):
+                                # Single prediction
+                                predictions.append(data)
+                            elif isinstance(data, list):
+                                # Array of predictions
+                                for prediction in data:
+                                    if isinstance(prediction, dict):
+                                        predictions.append(prediction)
+                                    else:
+                                        st.warning(f"Invalid prediction format in {filename}: item is not a dictionary")
+                            else:
+                                st.warning(f"Invalid prediction format in {filename}: not a dictionary or array")
+                    except (json.JSONDecodeError, Exception) as e:
+                        st.error(f"Error loading {filename}: {str(e)}")
+                        continue
 
         if not predictions:
             return pd.DataFrame()
 
-        return pd.DataFrame(predictions)
+        try:
+            return pd.DataFrame.from_records(predictions)
+        except Exception as e:
+            st.error(f"Error creating DataFrame: {str(e)}")
+            return pd.DataFrame()
 
     def export_history(self, format: str = "csv") -> Optional[str]:
         """
