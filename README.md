@@ -9,6 +9,9 @@
 [![CI](https://github.com/keltoumboukra/protein-optimizer/actions/workflows/ci.yml/badge.svg?event=push)](https://github.com/keltoumboukra/protein-optimizer/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/keltoumboukra/protein-optimizer/graph/badge.svg?token=AS4ZV2WHT1)](https://codecov.io/gh/keltoumboukra/protein-optimizer)
 
+## Test Coverage Overview
+![Code Coverage Sunburst](https://codecov.io/gh/keltoumboukra/protein-optimizer/graphs/sunburst.svg?token=AS4ZV2WHT1)
+
 A data-driven platform that helps researchers optimize protein expression conditions using machine learning. This tool predicts expression levels and solubility based on experimental parameters, helping streamline the protein production process.
 
 ![Protein Expression Optimization System Architecture](./assets/system_architecture.png)
