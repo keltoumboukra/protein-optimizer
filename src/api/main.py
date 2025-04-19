@@ -22,6 +22,18 @@ predictor.train(train_data)
 
 
 class ProteinExpressionRequest(BaseModel):
+    """Request model for protein expression prediction.
+
+    Attributes:
+        host_organism (str): The organism used for protein expression (e.g., E. coli)
+        vector_type (str): The type of expression vector used
+        induction_condition (str): The condition used for protein induction
+        media_type (str): The type of growth media used
+        temperature (float): The temperature used for expression
+        induction_time (float): The time duration for induction
+        description (Optional[str]): Optional description of the experiment
+    """
+
     host_organism: str
     vector_type: str
     induction_condition: str
@@ -45,6 +57,14 @@ class ProteinExpressionRequest(BaseModel):
 
 
 class PredictionResponse(BaseModel):
+    """Response model for protein expression prediction.
+
+    Attributes:
+        predicted_expression_level (float): The predicted level of protein expression
+        predicted_solubility (float): The predicted solubility of the protein
+        feature_importance (Dict[str, float]): Dictionary of feature importance scores
+    """
+
     predicted_expression_level: float
     predicted_solubility: float
     feature_importance: Dict[str, float]
@@ -52,12 +72,21 @@ class PredictionResponse(BaseModel):
 
 @app.get("/")
 async def root() -> Dict[str, str]:
+    """Root endpoint that returns a welcome message.
+
+    Returns:
+        Dict[str, str]: A welcome message for the API
+    """
     return {"message": "Welcome to Protein Expression Optimization API"}
 
 
 @app.get("/valid-categories")
 async def get_valid_categories() -> Dict[str, List[str]]:
-    """Get the list of valid categories for each field."""
+    """Get the list of valid categories for each field.
+
+    Returns:
+        Dict[str, List[str]]: Dictionary containing valid options for each field
+    """
     return {
         "host_organism": ["E. coli", "S. cerevisiae", "P. pastoris", "HEK293", "CHO"],
         "vector_type": ["pET", "pGEX", "pMAL", "pTrc", "pBAD"],
@@ -76,6 +105,17 @@ async def get_valid_categories() -> Dict[str, List[str]]:
 async def predict_expression(
     experiment: ProteinExpressionRequest,
 ) -> PredictionResponse:
+    """Predict protein expression level and solubility for a given experiment.
+
+    Args:
+        experiment (ProteinExpressionRequest): The experiment parameters
+
+    Returns:
+        PredictionResponse: The prediction results including expression level and solubility
+
+    Raises:
+        HTTPException: If there are validation errors or processing errors
+    """
     try:
         # Log the received data
         logger.info(f"Received experiment request: {experiment.dict()}")
@@ -117,7 +157,11 @@ async def predict_expression(
 
 @app.get("/generate-sample")
 async def generate_sample() -> Dict[str, Any]:
-    """Generate a sample experiment for testing."""
+    """Generate a sample experiment for testing.
+
+    Returns:
+        Dict[str, Any]: A sample experiment with all required fields and example values
+    """
     sample = generator.generate(num_records=1).iloc[0]
     return {
         "host_organism": sample["host_organism"],

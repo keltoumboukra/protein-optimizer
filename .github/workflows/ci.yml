@@ -7,12 +7,51 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  # Code Quality Checks
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run black formatter check
+      run: |
+        black --check src/ tests/
+    
+    - name: Run mypy type checking
+      run: |
+        mypy src/
+    
+    - name: Check docstring coverage
+      run: |
+        pip install interrogate
+        interrogate --fail-under=80 src/ tests/
+
+  # Unit Tests
+  unit-tests:
+    needs: code-quality
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.9, '3.10']
-      fail-fast: false  # Don't cancel other jobs if one fails
+      fail-fast: false
 
     steps:
     - uses: actions/checkout@v3
@@ -22,20 +61,13 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     
-    - name: Show Python version and environment
-      run: |
-        python --version
-        pip --version
-        pip list
-    
-    - name: Show directory structure
-      run: |
-        pwd
-        ls -la
-        echo "Contents of src directory:"
-        ls -la src/ || echo "src directory not found"
-        echo "Contents of tests directory:"
-        ls -la tests/ || echo "tests directory not found"
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
     
     - name: Install dependencies
       run: |
@@ -43,17 +75,76 @@ jobs:
         pip install -r requirements.txt
         pip install pytest pytest-cov mypy
     
-    - name: Run mypy
+    - name: Run unit tests with coverage
       run: |
-        mypy src/ || echo "mypy check failed but continuing"
-    
-    - name: Run tests with coverage
-      run: |
-        pytest -v --cov=src --cov-report=xml || echo "pytest failed but continuing"
+        pytest -v --cov=src --cov-report=xml --cov-report=term-missing tests/unit || echo "pytest failed but continuing"
     
     - name: Upload coverage to Codecov
-      if: always()  # Run this step even if previous steps failed
+      if: always()
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
-        fail_ci_if_error: false  # Don't fail the workflow if coverage upload fails 
+        fail_ci_if_error: false
+
+  # Integration Tests
+  integration-tests:
+    needs: unit-tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, '3.10']
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov mypy
+    
+    - name: Run integration tests
+      run: |
+        pytest -v --cov=src --cov-report=xml --cov-report=term-missing tests/integration || echo "pytest failed but continuing"
+
+  # Dependency Check
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety
+    
+    - name: Check for vulnerable dependencies
+      run: |
+        safety check 

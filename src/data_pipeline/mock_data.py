@@ -5,7 +5,26 @@ from typing import List, Dict, Optional
 
 
 class MockProteinExpressionDataGenerator:
+    """A generator for creating realistic mock protein expression data.
+
+    This class generates synthetic data that mimics real protein expression experiments,
+    including various experimental parameters and outcomes. It's useful for testing
+    and development purposes.
+
+    Attributes:
+        num_records (int): Default number of records to generate
+        host_organisms (List[str]): Available host organisms for expression
+        vector_types (List[str]): Available expression vectors
+        induction_conditions (List[str]): Available induction conditions
+        media_types (List[str]): Available growth media types
+    """
+
     def __init__(self, num_records: int = 100) -> None:
+        """Initialize the data generator with default parameters.
+
+        Args:
+            num_records (int): Default number of records to generate
+        """
         self.num_records = num_records
         self.host_organisms: List[str] = [
             "E. coli",
@@ -25,7 +44,27 @@ class MockProteinExpressionDataGenerator:
         self.media_types: List[str] = ["LB", "TB", "M9", "YPD", "CD-CHO"]
 
     def generate(self, num_records: Optional[int] = None) -> pd.DataFrame:
-        """Generate mock protein expression data."""
+        """Generate mock protein expression data.
+
+        Args:
+            num_records (Optional[int]): Number of records to generate. If None,
+                uses the default value set during initialization.
+
+        Returns:
+            pd.DataFrame: DataFrame containing the generated mock data with columns:
+                - experiment_id: Unique identifier for each experiment
+                - date: Timestamp of the experiment
+                - host_organism: Organism used for expression
+                - vector_type: Expression vector used
+                - induction_condition: Condition used for induction
+                - media_type: Growth media used
+                - temperature: Expression temperature
+                - induction_time: Duration of induction
+                - expression_level: Percentage of expression
+                - solubility: Percentage of soluble protein
+                - description: Text description of the experiment
+                - notes: Additional experimental notes
+        """
         if num_records is None:
             num_records = self.num_records
 
@@ -53,7 +92,14 @@ class MockProteinExpressionDataGenerator:
         return df
 
     def _generate_dates(self, num_records: int) -> List[datetime]:
-        """Generate random dates within the last 6 months."""
+        """Generate random dates within the last 6 months.
+
+        Args:
+            num_records (int): Number of dates to generate
+
+        Returns:
+            List[datetime]: List of randomly generated dates
+        """
         end_date = datetime.now()
         start_date = end_date - timedelta(days=180)
         return [
@@ -67,7 +113,11 @@ class MockProteinExpressionDataGenerator:
         ]
 
     def _generate_description(self) -> str:
-        """Generate a realistic experiment description."""
+        """Generate a realistic experiment description.
+
+        Returns:
+            str: A randomly generated description of a protein expression experiment
+        """
         templates: List[str] = [
             "Expression of {protein} in {host} using {vector} vector",
             "Optimization of {protein} expression in {host} with {media} media",
@@ -87,7 +137,11 @@ class MockProteinExpressionDataGenerator:
         )
 
     def _generate_notes(self) -> str:
-        """Generate realistic experiment notes."""
+        """Generate realistic experiment notes.
+
+        Returns:
+            str: A randomly generated note about the experiment
+        """
         templates: List[str] = [
             "Adjusted {parameter} to {value} for better expression",
             "Observed {observation} during induction",

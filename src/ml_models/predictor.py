@@ -7,7 +7,21 @@ from numpy.typing import NDArray
 
 
 class ProteinExpressionPredictor:
+    """A machine learning model for predicting protein expression levels and solubility.
+
+    This class uses a Random Forest Regressor to predict protein expression levels
+    and solubility based on various experimental parameters such as host organism,
+    vector type, and growth conditions.
+
+    Attributes:
+        model (RandomForestRegressor): The trained machine learning model
+        label_encoders (Dict[str, LabelEncoder]): Encoders for categorical features
+        feature_columns (List[str]): List of input feature columns
+        target_columns (List[str]): List of target prediction columns
+    """
+
     def __init__(self) -> None:
+        """Initialize the predictor with a Random Forest model and feature configurations."""
         self.model = RandomForestRegressor(
             n_estimators=100, max_depth=10, random_state=42
         )
@@ -25,7 +39,20 @@ class ProteinExpressionPredictor:
     def prepare_features(
         self, df: pd.DataFrame, is_training: bool = False
     ) -> Tuple[NDArray[np.float64], Optional[NDArray[np.float64]]]:
-        """Prepare features for the model."""
+        """Prepare features for model training or prediction.
+
+        Args:
+            df (pd.DataFrame): Input dataframe containing experimental parameters
+            is_training (bool): Whether the data is being used for training
+
+        Returns:
+            Tuple[NDArray[np.float64], Optional[NDArray[np.float64]]]: 
+                - Processed feature matrix
+                - Target values (if training) or None (if prediction)
+
+        Raises:
+            ValueError: If unknown categories are encountered during prediction
+        """
         # Create a copy to avoid modifying the original dataframe
         df_copy = df.copy()
 
@@ -80,7 +107,14 @@ class ProteinExpressionPredictor:
         return X, y
 
     def train(self, df: pd.DataFrame) -> None:
-        """Train the model on the provided data."""
+        """Train the model on the provided data.
+
+        Args:
+            df (pd.DataFrame): Training data containing both features and target variables
+
+        Raises:
+            ValueError: If target columns are missing from the training data
+        """
         X, y = self.prepare_features(df, is_training=True)
         if y is not None:
             self.model.fit(X, y)
@@ -90,13 +124,24 @@ class ProteinExpressionPredictor:
             )
 
     def predict(self, df: pd.DataFrame) -> NDArray[np.float64]:
-        """Predict expression level and solubility for new experiments."""
+        """Predict expression level and solubility for new experiments.
+
+        Args:
+            df (pd.DataFrame): Input data containing experimental parameters
+
+        Returns:
+            NDArray[np.float64]: Array of predictions [expression_level, solubility]
+        """
         X, _ = self.prepare_features(df, is_training=False)
         predictions = self.model.predict(X)
         return cast(NDArray[np.float64], predictions)
 
     def get_feature_importance(self) -> Dict[str, float]:
-        """Get feature importance scores."""
+        """Get feature importance scores from the trained model.
+
+        Returns:
+            Dict[str, float]: Dictionary mapping feature names to their importance scores
+        """
         importance = self.model.feature_importances_
         return dict(zip(self.feature_columns, importance.tolist()))
 
