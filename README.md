@@ -1,4 +1,4 @@
-# Protein Expression Optimization System
+# Protein Expression Optimizer
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
@@ -8,9 +8,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/keltoumboukra/protein-optimizer/actions/workflows/ci.yml/badge.svg?event=push)](https://github.com/keltoumboukra/protein-optimizer/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/keltoumboukra/protein-optimizer/graph/badge.svg?token=AS4ZV2WHT1)](https://codecov.io/gh/keltoumboukra/protein-optimizer)
-
-## Test Coverage Overview
-![Code Coverage Sunburst](https://codecov.io/gh/keltoumboukra/protein-optimizer/graphs/sunburst.svg?token=AS4ZV2WHT1)
 
 A data-driven platform that helps researchers optimize protein expression conditions using machine learning. This tool predicts expression levels and solubility based on experimental parameters, helping streamline the protein production process.
 
@@ -113,6 +110,15 @@ mypy src/
 - `pytest.ini`: Test configuration
 - `mypy.ini`: Type checking settings
 - `pyproject.toml`: Code formatting rules
+
+## Code Coverage
+
+Our test suite provides comprehensive coverage across the codebase. The coverage report shows:
+- Overall test coverage percentage
+- Coverage by module and package
+- Untested code paths
+
+![Code Coverage Tree Map](https://codecov.io/gh/keltoumboukra/protein-optimizer/graphs/tree.svg?token=AS4ZV2WHT1)
 
 ## Future Roadmap
 
