@@ -120,7 +120,9 @@ def test_predictor_error_handling(sample_data: pd.DataFrame) -> None:
         predictor.predict(invalid_data)
 
 
-def test_end_to_end_with_mock_data(mock_generator: MockProteinExpressionDataGenerator) -> None:
+def test_end_to_end_with_mock_data(
+    mock_generator: MockProteinExpressionDataGenerator,
+) -> None:
     """Test the complete workflow using mock data"""
     # Generate training data and save the first generated sample for testing
     train_data = mock_generator.generate(num_records=100)

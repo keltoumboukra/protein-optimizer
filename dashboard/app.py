@@ -198,6 +198,7 @@ else:
         "Please make sure the FastAPI server is running on http://localhost:8000"
     )
 
+
 def create_app() -> FastAPI:
     """
     Create and configure the FastAPI application.
@@ -208,6 +209,6 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Protein Expression Optimizer",
         description="Dashboard for protein expression optimization",
-        version="1.0.0"
+        version="1.0.0",
     )
     return app

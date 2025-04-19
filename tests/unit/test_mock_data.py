@@ -12,7 +12,7 @@ from src.data_pipeline.mock_data import MockProteinExpressionDataGenerator
 def test_mock_data_generator() -> None:
     """
     Test the mock data generator functionality.
-    
+
     Verifies that:
     - The correct number of records are generated
     - All required columns are present
