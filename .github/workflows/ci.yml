@@ -149,4 +149,4 @@ jobs:
       env:
         SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
       run: |
-        safety scan 
+        safety scan --project protein-optimizer 
