@@ -16,56 +16,117 @@ A data-driven platform that helps researchers optimize protein expression condit
 
 ![Protein Expression Optimization System Architecture](./assets/system_architecture.png)
 
-## Project Structure
+## What's Inside
 
 ```
 protein_optimizer/
-├── dashboard/           # Streamlit visualization interface
+├── dashboard/           # Streamlit-based visualization interface
+│   └── app.py          # Main dashboard application with plotly visualizations
 ├── src/
 │   ├── api/            # FastAPI backend service
-│   ├── data_pipeline/  # Data processing
-│   └── ml_models/      # ML prediction models
-├── tests/              # Test suite
-└── data/               # Data storage
+│   │   └── main.py     # API endpoints and server configuration
+│   ├── data_pipeline/  # Data generation and processing
+│   │   └── mock_data.py # Mock data generation for development
+│   └── ml_models/      # Expression prediction models
+│       └── predictor.py # RandomForest-based protein expression predictor
+├── tests/              # Comprehensive test suite
+│   ├── test_api.py     # API endpoint tests
+│   └── test_predictor.py # ML model and data processing tests
+├── setup.py            # Package configuration and dependencies
+├── pytest.ini          # Test configuration settings
+├── mypy.ini           # Type checking configuration
+└── pyproject.toml     # Code formatting and tool settings
 ```
 
 ## Key Features
 
-- **ML-Powered Predictions**: RandomForest models for expression and solubility prediction
-- **Interactive Dashboard**: Real-time data visualization
-- **REST API**: Integration with lab workflows
-- **Development Tools**: Comprehensive testing and type checking
+- **Smart Predictions**: Uses RandomForest models to predict protein expression levels and solubility
+- **Interactive Dashboard**: Real-time visualization of expression data and predictions
+- **REST API**: Easy integration with existing lab workflows
+- **Rapid Prototyping**: Built-in mock data generation for testing and development
 
-## Quick Start
+## Getting Started
 
-1. Set up environment:
+1. Set up your environment:
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+2. Install the package with development dependencies:
+```bash
 pip install -e ".[dev]"
 ```
 
-2. Start services:
-```bash
-# Start API (http://localhost:8000)
-uvicorn src.api.main:app --reload
+This will install all required packages including:
+- Core dependencies (pandas, numpy, scikit-learn, etc.)
+- API dependencies (FastAPI, uvicorn)
+- Visualization dependencies (streamlit, plotly)
+- Development tools (pytest, black, mypy)
 
-# Start Dashboard (http://localhost:8501)
+Note: Every time you open a new terminal or IDE session, you'll need to reactivate the virtual environment:
+```bash
+# Navigate to the project directory
+cd /path/to/protein-optimizer
+
+# Activate the virtual environment
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# You should see (venv) in your terminal prompt when it's activated
+```
+
+3. Start the prediction service:
+```bash
+uvicorn src.api.main:app --reload
+```
+
+4. Launch the dashboard:
+```bash
 streamlit run dashboard/app.py
 ```
 
-## Development
+The dashboard will be available at http://localhost:8501 and the API at http://localhost:8000.
 
+## Development Guide
+
+The project uses several development tools to ensure code quality:
+
+### Testing
+Run the test suite with coverage report:
 ```bash
-# Run tests with coverage
 pytest --cov=src tests/
+```
 
-# Format code
+### Code Formatting
+Format your code using black:
+```bash
 black .
+```
 
-# Type checking
+### Type Checking
+Check type annotations with mypy:
+```bash
 mypy src/
 ```
+
+### Configuration Files
+- `pytest.ini`: Test configuration
+- `mypy.ini`: Type checking settings
+- `pyproject.toml`: Code formatting rules
+
+## Future Roadmap
+
+I'm planning to integrate with key bioinformatics resources:
+- AlphaFold for structure prediction
+- UniProt for protein properties
+- PDB for structural data
+- ESM-2 for sequence analysis
+- BRENDA for enzyme data
+- KEGG for pathway information
+
+## Contributing
+
+I welcome contributions! Feel free to open issues or submit pull requests that improve prediction accuracy, add new features, or enhance the user interface.
 
 ## License
 
