@@ -1,8 +1,24 @@
+"""
+Unit tests for the mock data generation module.
+
+This module tests the functionality of the MockProteinExpressionDataGenerator class,
+ensuring that it generates valid data within expected ranges and with correct properties.
+"""
+
 import pytest
 from src.data_pipeline.mock_data import MockProteinExpressionDataGenerator
 
 
-def test_mock_data_generator():
+def test_mock_data_generator() -> None:
+    """
+    Test the mock data generator functionality.
+    
+    Verifies that:
+    - The correct number of records are generated
+    - All required columns are present
+    - Generated values are within expected ranges
+    - Data types are correct
+    """
     # Test data generation
     generator = MockProteinExpressionDataGenerator(num_records=10)
     df = generator.generate()

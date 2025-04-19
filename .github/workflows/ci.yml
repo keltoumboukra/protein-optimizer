@@ -145,8 +145,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install safety
     
-    - name: Check for vulnerable dependencies
-      env:
-        SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
+    - name: Run Safety check
       run: |
-        safety scan --project protein-optimizer 
+        safety scan --project protein-optimizer
+      env:
+        SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }} 

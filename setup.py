@@ -1,3 +1,10 @@
+"""
+Setup script for the protein-optimizer package.
+
+This package provides tools for optimizing protein expression conditions using machine learning.
+It includes a FastAPI backend for predictions and a Streamlit dashboard for visualization.
+"""
+
 from setuptools import setup, find_packages
 
 setup(
@@ -14,6 +21,7 @@ setup(
         "plotly",
         "requests",
         "python-multipart",  # for FastAPI file uploads
+        "urllib3>=2.0.0",  # Add explicit urllib3 requirement
     ],
     extras_require={
         "dev": [

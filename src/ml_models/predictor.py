@@ -46,7 +46,7 @@ class ProteinExpressionPredictor:
             is_training (bool): Whether the data is being used for training
 
         Returns:
-            Tuple[NDArray[np.float64], Optional[NDArray[np.float64]]]: 
+            Tuple[NDArray[np.float64], Optional[NDArray[np.float64]]]:
                 - Processed feature matrix
                 - Target values (if training) or None (if prediction)
 

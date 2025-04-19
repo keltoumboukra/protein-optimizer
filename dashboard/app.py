@@ -1,3 +1,12 @@
+"""
+Streamlit dashboard for protein expression optimization.
+
+This module provides a web interface for:
+- Visualizing protein expression data
+- Making predictions for new protein expression conditions
+- Analyzing feature importance
+"""
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -7,6 +16,7 @@ from datetime import datetime, timedelta
 import sys
 import os
 import json
+from fastapi import FastAPI
 
 # Add the project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -28,7 +38,16 @@ num_records = st.sidebar.slider("Number of Records", 10, 1000, 100)
 
 # Generate mock data
 @st.cache_data
-def load_data(num_records):
+def load_data(num_records: int) -> pd.DataFrame:
+    """
+    Load and cache protein expression data from the API.
+
+    Args:
+        num_records: Number of sample records to generate
+
+    Returns:
+        DataFrame containing protein expression samples
+    """
     try:
         # Generate multiple samples to get enough data for visualization
         samples = []
@@ -178,3 +197,17 @@ else:
     st.warning(
         "Please make sure the FastAPI server is running on http://localhost:8000"
     )
+
+def create_app() -> FastAPI:
+    """
+    Create and configure the FastAPI application.
+
+    Returns:
+        Configured FastAPI application instance
+    """
+    app = FastAPI(
+        title="Protein Expression Optimizer",
+        description="Dashboard for protein expression optimization",
+        version="1.0.0"
+    )
+    return app
