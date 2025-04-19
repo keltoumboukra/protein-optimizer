@@ -146,5 +146,7 @@ jobs:
         pip install safety
     
     - name: Check for vulnerable dependencies
+      env:
+        SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
       run: |
         safety scan 
