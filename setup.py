@@ -12,25 +12,32 @@ setup(
     version="0.1.0",
     packages=find_packages(),
     install_requires=[
-        "pandas",
-        "numpy",
-        "scikit-learn",
-        "fastapi",
-        "streamlit",
-        "uvicorn",
-        "plotly",
-        "requests",
-        "python-multipart",  # for FastAPI file uploads
-        "urllib3>=2.0.0",  # Add explicit urllib3 requirement
+        # Web Framework
+        "fastapi>=0.104.0",
+        "uvicorn>=0.24.0",
+        "pydantic>=2.0.0",
+        
+        # Data Processing and ML
+        "pandas>=2.1.0",
+        "numpy>=1.24.0",
+        "scikit-learn>=1.3.0",
+        
+        # Dashboard
+        "streamlit>=1.28.0",
+        "plotly>=5.18.0",
+        "requests>=2.31.0",
     ],
     extras_require={
         "dev": [
-            "pytest",
-            "pytest-cov",
-            "black",
-            "mypy",
+            # Testing
+            "pytest>=7.4.0",
+            "pytest-cov>=4.1.0",
+            
+            # Code Quality
+            "black>=23.10.0",
+            "mypy>=1.6.0",
             "pandas-stubs",
         ],
     },
-    python_requires=">=3.8",
+    python_requires=">=3.9",
 )
