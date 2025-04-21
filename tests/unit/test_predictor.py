@@ -9,19 +9,8 @@ from typing import Any
 
 @pytest.fixture
 def sample_data() -> pd.DataFrame:
-    """Create sample data for testing"""
-    return pd.DataFrame(
-        {
-            "host_organism": ["E. coli", "S. cerevisiae"],
-            "vector_type": ["pET", "pGEX"],
-            "induction_condition": ["IPTG", "Galactose"],
-            "media_type": ["LB", "YPD"],
-            "temperature": [37.0, 30.0],
-            "induction_time": [4.0, 12.0],
-            "expression_level": [75.0, 60.0],
-            "solubility": [80.0, 65.0],
-        }
-    )
+    """Create sample data for testing using real Expression Atlas data"""
+    return pd.read_csv("tests/data/test_expression_data.csv")
 
 
 @pytest.fixture
@@ -52,9 +41,9 @@ def test_prepare_features(sample_data: pd.DataFrame) -> None:
     X, y = predictor.prepare_features(sample_data, is_training=True)
 
     # Check shapes
-    assert X.shape == (2, 6)  # 2 samples, 6 features
+    assert X.shape == (len(sample_data), 6)  # N samples, 6 features
     if y is not None:  # Add type check for y
-        assert y.shape == (2, 2)  # 2 samples, 2 targets
+        assert y.shape == (len(sample_data), 2)  # N samples, 2 targets
 
     # Check numeric features remain unchanged
     np.testing.assert_array_almost_equal(
@@ -78,7 +67,7 @@ def test_train_and_predict(sample_data: pd.DataFrame) -> None:
     predictions = predictor.predict(sample_data)
 
     # Check prediction shape and type
-    assert predictions.shape == (2, 2)  # 2 samples, 2 targets
+    assert predictions.shape == (len(sample_data), 2)  # N samples, 2 targets
     assert isinstance(predictions, np.ndarray)
     assert predictions.dtype == np.float64
 
@@ -120,26 +109,11 @@ def test_predictor_error_handling(sample_data: pd.DataFrame) -> None:
         predictor.predict(invalid_data)
 
 
-def test_end_to_end_with_mock_data(
-    mock_generator: MockProteinExpressionDataGenerator,
-) -> None:
-    """Test the complete workflow using mock data"""
-    # Generate training data and save the first generated sample for testing
-    train_data = mock_generator.generate(num_records=100)
-
-    # Create test data using only categories from training data
-    test_data = pd.DataFrame(
-        {
-            "host_organism": train_data["host_organism"].iloc[:5],
-            "vector_type": train_data["vector_type"].iloc[:5],
-            "induction_condition": train_data["induction_condition"].iloc[:5],
-            "media_type": train_data["media_type"].iloc[:5],
-            "temperature": train_data["temperature"].iloc[:5],
-            "induction_time": train_data["induction_time"].iloc[:5],
-            "expression_level": train_data["expression_level"].iloc[:5],
-            "solubility": train_data["solubility"].iloc[:5],
-        }
-    )
+def test_end_to_end_with_real_data(sample_data: pd.DataFrame) -> None:
+    """Test the complete workflow using real Expression Atlas data"""
+    # Split data into train and test
+    train_data = sample_data.iloc[:6]  # First 6 samples for training
+    test_data = sample_data.iloc[6:]  # Last 3 samples for testing
 
     # Train predictor
     predictor = ProteinExpressionPredictor()
@@ -149,7 +123,7 @@ def test_end_to_end_with_mock_data(
     predictions = predictor.predict(test_data)
 
     # Check predictions
-    assert predictions.shape == (5, 2)
+    assert predictions.shape == (len(test_data), 2)
     assert np.all(predictions >= 0)
     assert np.all(predictions <= 100)
 
@@ -162,15 +136,18 @@ def test_end_to_end_with_mock_data(
     single_prediction = predictor.predict(
         pd.DataFrame(
             {
-                "host_organism": [train_data["host_organism"].iloc[0]],
-                "vector_type": [train_data["vector_type"].iloc[0]],
-                "induction_condition": [train_data["induction_condition"].iloc[0]],
-                "media_type": [train_data["media_type"].iloc[0]],
+                "host_organism": [test_data["host_organism"].iloc[0]],
+                "vector_type": [test_data["vector_type"].iloc[0]],
+                "induction_condition": [test_data["induction_condition"].iloc[0]],
+                "media_type": [test_data["media_type"].iloc[0]],
                 "temperature": [37.0],
-                "induction_time": [4.0],
+                "induction_time": [24.0],
             }
         )
     )
+    assert single_prediction.shape == (1, 2)
+    assert np.all(single_prediction >= 0)
+    assert np.all(single_prediction <= 100)
 
 
 def test_prepare_features_edge_cases() -> None:

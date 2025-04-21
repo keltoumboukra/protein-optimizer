@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 import logging
 
-from src.data_pipeline.mock_data import MockProteinExpressionDataGenerator
+from src.data_pipeline.expression_data_processor import ExpressionDataProcessor
 from src.ml_models.predictor import ProteinExpressionPredictor
 
 # Set up logging
@@ -15,10 +15,24 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Protein Expression Optimization API")
 
 # Initialize components
-generator = MockProteinExpressionDataGenerator(num_records=1000)
-train_data = generator.generate()
+processor = ExpressionDataProcessor()
 predictor = ProteinExpressionPredictor()
-predictor.train(train_data)
+
+# List of experiments to use for training
+TRAINING_EXPERIMENTS = [
+    'E-MTAB-4045',  # Arabidopsis thaliana development
+    'E-MTAB-5214',  # Human cell lines
+    'E-MTAB-5432',  # Mouse tissues
+]
+
+# Load and process training data
+try:
+    train_data = processor.get_training_data(TRAINING_EXPERIMENTS)
+    predictor.train(train_data)
+    logger.info("Successfully loaded training data and trained model")
+except Exception as e:
+    logger.error(f"Error loading training data: {str(e)}")
+    train_data = pd.DataFrame()  # Empty DataFrame as fallback
 
 
 class ProteinExpressionRequest(BaseModel):
@@ -60,14 +74,16 @@ class PredictionResponse(BaseModel):
     """Response model for protein expression prediction.
 
     Attributes:
-        predicted_expression_level (float): The predicted level of protein expression
-        predicted_solubility (float): The predicted solubility of the protein
-        feature_importance (Dict[str, float]): Dictionary of feature importance scores
+        predicted_expression_level (float): Predicted expression level (0-100)
+        predicted_solubility (float): Predicted solubility (0-100)
+        feature_importance (Dict[str, float]): Importance scores for each feature
+        timestamp (datetime): When the prediction was made
     """
 
     predicted_expression_level: float
     predicted_solubility: float
     feature_importance: Dict[str, float]
+    timestamp: datetime
 
 
 @app.get("/")
@@ -102,78 +118,106 @@ async def get_valid_categories() -> Dict[str, List[str]]:
 
 
 @app.post("/predict", response_model=PredictionResponse)
-async def predict_expression(
-    experiment: ProteinExpressionRequest,
-) -> PredictionResponse:
-    """Predict protein expression level and solubility for a given experiment.
+async def predict_expression(request: ProteinExpressionRequest) -> PredictionResponse:
+    """Predict protein expression level and solubility.
 
     Args:
-        experiment (ProteinExpressionRequest): The experiment parameters
+        request: The prediction request containing experimental parameters
 
     Returns:
-        PredictionResponse: The prediction results including expression level and solubility
-
-    Raises:
-        HTTPException: If there are validation errors or processing errors
+        PredictionResponse containing predicted values and feature importance
     """
     try:
-        # Log the received data
-        logger.info(f"Received experiment request: {experiment.dict()}")
-
-        # Convert experiment request to DataFrame
-        df = pd.DataFrame([experiment.dict()])
-
-        # Validate required columns
-        required_columns = [
-            "host_organism",
-            "vector_type",
-            "induction_condition",
-            "media_type",
-            "temperature",
-            "induction_time",
-        ]
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        if missing_columns:
-            raise ValueError(f"Missing required columns: {missing_columns}")
+        # Convert request to DataFrame
+        input_data = pd.DataFrame([request.dict()])
 
         # Make prediction
-        prediction = predictor.predict(df)[0]
+        predictions = predictor.predict(input_data)
 
         # Get feature importance
         importance = predictor.get_feature_importance()
 
         return PredictionResponse(
-            predicted_expression_level=float(prediction[0]),
-            predicted_solubility=float(prediction[1]),
+            predicted_expression_level=float(predictions[0][0]),
+            predicted_solubility=float(predictions[0][1]),
             feature_importance=importance,
+            timestamp=datetime.now(),
         )
-    except ValueError as e:
-        logger.error(f"Validation error: {str(e)}")
-        raise HTTPException(status_code=400, detail=str(e))
+
     except Exception as e:
-        logger.error(f"Error processing prediction: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error making prediction: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error making prediction: {str(e)}",
+        )
+
+
+@app.get("/experiments")
+async def get_available_experiments() -> List[Dict[str, Any]]:
+    """Get list of available experiments for training.
+
+    Returns:
+        List of experiment metadata
+    """
+    try:
+        experiments = []
+        for exp_id in TRAINING_EXPERIMENTS:
+            try:
+                metadata = processor.atlas_client.get_experiment_metadata(exp_id)
+                experiments.append({
+                    'id': exp_id,
+                    'title': metadata.get('title', ''),
+                    'description': metadata.get('description', ''),
+                    'species': metadata.get('species', ''),
+                    'experiment_type': metadata.get('experiment_type', '')
+                })
+            except Exception as e:
+                logger.error(f"Error getting metadata for experiment {exp_id}: {str(e)}")
+                continue
+                
+        return experiments
+    except Exception as e:
+        logger.error(f"Error getting experiments: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting experiments: {str(e)}",
+        )
 
 
 @app.get("/generate-sample")
 async def generate_sample() -> Dict[str, Any]:
-    """Generate a sample experiment for testing.
+    """Generate a sample experiment from the training data.
 
     Returns:
-        Dict[str, Any]: A sample experiment with all required fields and example values
+        Dict[str, Any]: A sample experiment with all required fields
     """
-    sample = generator.generate(num_records=1).iloc[0]
-    return {
-        "host_organism": sample["host_organism"],
-        "vector_type": sample["vector_type"],
-        "induction_condition": sample["induction_condition"],
-        "media_type": sample["media_type"],
-        "temperature": sample["temperature"],
-        "induction_time": sample["induction_time"],
-        "description": sample["description"],
-        "expression_level": sample["expression_level"],
-        "solubility": sample["solubility"],
-    }
+    try:
+        if train_data.empty:
+            raise HTTPException(
+                status_code=500,
+                detail="No training data available"
+            )
+            
+        # Get a random sample from the training data
+        sample = train_data.sample(n=1).iloc[0]
+        
+        return {
+            "host_organism": sample["host_organism"],
+            "vector_type": sample["vector_type"],
+            "induction_condition": sample["induction_condition"],
+            "media_type": sample["media_type"],
+            "temperature": float(sample["temperature"]),
+            "induction_time": float(sample["induction_time"]),
+            "description": f"Expression of {sample['gene_name']} in {sample['host_organism']}",
+            "expression_level": float(sample["expression_level"]),
+            "solubility": float(sample["solubility"]),
+        }
+    except Exception as e:
+        logger.error(f"Error generating sample: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating sample: {str(e)}",
+        )
 
 
 if __name__ == "__main__":

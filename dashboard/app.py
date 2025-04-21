@@ -28,232 +28,191 @@ prediction_history = PredictionHistory()
 
 # Page config
 st.set_page_config(
-    page_title="Protein Expression Optimization Dashboard",
+    page_title="Protein Expression Optimizer",
     page_icon="🧬",
     layout="wide",
 )
 
-# Title
-st.title("🧬 Protein Expression Optimization Dashboard")
+# Title and description
+st.title("Protein Expression Optimizer")
+st.markdown(
+    """
+    This dashboard helps you optimize protein expression conditions using machine learning.
+    Enter your experimental parameters below to get predictions for expression level and solubility.
+    """
+)
 
-# Sidebar
-st.sidebar.header("Settings")
-num_records = st.sidebar.slider("Number of Records", 10, 1000, 100)
-
-# Add tabs for different sections
-tab1, tab2 = st.tabs(["Expression Analysis", "Prediction History"])
+# Create tabs
+tab1, tab2 = st.tabs(["Predictions", "Training Data"])
 
 with tab1:
-    # Generate mock data
+    # Load data from API
     @st.cache_data
-    def load_data(num_records: int) -> pd.DataFrame:
+    def load_data() -> pd.DataFrame:
         """
-        Load and cache protein expression data from the API.
-
-        Args:
-            num_records: Number of sample records to generate
+        Load protein expression data from the API.
 
         Returns:
             DataFrame containing protein expression samples
         """
         try:
-            # Generate multiple samples to get enough data for visualization
-            samples = []
-            for _ in range(num_records):
-                response = requests.get("http://localhost:8000/generate-sample")
-                if response.status_code == 200:
-                    samples.append(response.json())
-
-            if not samples:
-                st.error("No data received from the API")
+            response = requests.get("http://localhost:8000/generate-sample")
+            if response.status_code == 200:
+                return pd.DataFrame([response.json()])
+            else:
+                st.error("Error loading data from API")
                 return pd.DataFrame()
-
-            return pd.DataFrame(samples)
         except Exception as e:
             st.error(f"Error loading data: {str(e)}")
             return pd.DataFrame()
 
     # Load data
-    df = load_data(num_records)
+    df = load_data()
 
-    # Only show visualizations if we have data
     if not df.empty:
-        # Main content
+        # Display sample data
+        st.subheader("Sample Data")
+        st.dataframe(df)
+
+        # Create input form
+        st.subheader("Enter Experimental Parameters")
         col1, col2 = st.columns(2)
 
         with col1:
-            st.subheader("Expression Distribution by Host Organism")
-            try:
-                fig_host = px.box(
-                    df,
-                    x="host_organism",
-                    y="expression_level",
-                    title="Expression Level Distribution by Host Organism",
-                )
-                st.plotly_chart(fig_host, use_container_width=True)
-            except Exception as e:
-                st.error(f"Error creating host organism plot: {str(e)}")
-                st.write("Available columns:", df.columns.tolist())
+            host_organism = st.selectbox(
+                "Host Organism",
+                options=df["host_organism"].unique(),
+                index=0,
+            )
+            vector_type = st.selectbox(
+                "Vector Type",
+                options=df["vector_type"].unique(),
+                index=0,
+            )
+            induction_condition = st.selectbox(
+                "Induction Condition",
+                options=df["induction_condition"].unique(),
+                index=0,
+            )
 
         with col2:
-            st.subheader("Expression Distribution by Vector Type")
+            media_type = st.selectbox(
+                "Media Type",
+                options=df["media_type"].unique(),
+                index=0,
+            )
+            temperature = st.slider(
+                "Temperature (°C)",
+                min_value=20.0,
+                max_value=37.0,
+                value=37.0,
+                step=0.1,
+            )
+            induction_time = st.slider(
+                "Induction Time (hours)",
+                min_value=1.0,
+                max_value=24.0,
+                value=4.0,
+                step=0.5,
+            )
+
+        # Make prediction
+        if st.button("Predict"):
             try:
-                fig_vector = px.box(
-                    df,
-                    x="vector_type",
-                    y="expression_level",
-                    title="Expression Level Distribution by Vector Type",
-                )
-                st.plotly_chart(fig_vector, use_container_width=True)
-            except Exception as e:
-                st.error(f"Error creating vector type plot: {str(e)}")
-                st.write("Available columns:", df.columns.tolist())
-
-        # Expression Prediction Form
-        st.subheader("Predict Protein Expression")
-        with st.form("expression_prediction_form"):
-            col1, col2 = st.columns(2)
-
-            with col1:
-                host_organism = st.selectbox(
-                    "Host Organism",
-                    ["E. coli", "S. cerevisiae", "P. pastoris", "HEK293", "CHO"],
-                )
-                vector_type = st.selectbox(
-                    "Vector Type", ["pET", "pGEX", "pMAL", "pTrc", "pBAD"]
-                )
-                induction_condition = st.selectbox(
-                    "Induction Condition",
-                    ["IPTG", "Arabinose", "Methanol", "Galactose", "Tetracycline"],
-                )
-
-            with col2:
-                media_type = st.selectbox(
-                    "Media Type", ["LB", "TB", "M9", "YPD", "CD-CHO"]
-                )
-                temperature = st.slider(
-                    "Temperature (°C)",
-                    min_value=20.0,
-                    max_value=37.0,
-                    value=37.0,
-                    step=0.5,
-                )
-                induction_time = st.slider(
-                    "Induction Time (hours)",
-                    min_value=2.0,
-                    max_value=24.0,
-                    value=4.0,
-                    step=0.5,
-                )
-
-            description = st.text_area("Description (Optional)")
-
-            submitted = st.form_submit_button("Predict Expression")
-
-            if submitted:
                 # Prepare request data
-                experiment_data = {
+                request_data = {
                     "host_organism": host_organism,
                     "vector_type": vector_type,
                     "induction_condition": induction_condition,
                     "media_type": media_type,
                     "temperature": temperature,
                     "induction_time": induction_time,
-                    "description": description,
                 }
 
-                try:
-                    # Log the request data
-                    st.write(
-                        "Sending request with data:",
-                        json.dumps(experiment_data, indent=2),
-                    )
+                # Send request to API
+                response = requests.post(
+                    "http://localhost:8000/predict",
+                    json=request_data,
+                )
 
-                    # Make API request
-                    response = requests.post(
-                        "http://localhost:8000/predict", json=experiment_data
-                    )
+                if response.status_code == 200:
+                    result = response.json()
 
-                    if response.status_code == 200:
-                        result = response.json()
-
-                        # Save prediction to history
-                        prediction_data = {
-                            **experiment_data,
-                            "predicted_expression_level": result[
-                                "predicted_expression_level"
-                            ],
-                            "predicted_solubility": result["predicted_solubility"],
-                            "feature_importance": result["feature_importance"],
-                        }
-                        prediction_history.save_prediction(prediction_data)
-
-                        # Display predictions
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.success(
-                                f"Predicted Expression Level: {result['predicted_expression_level']:.2f}%"
-                            )
-                        with col2:
-                            st.success(
-                                f"Predicted Solubility: {result['predicted_solubility']:.2f}%"
-                            )
-
-                        # Display feature importance
-                        st.subheader("Feature Importance")
-                        importance_df = pd.DataFrame(
-                            list(result["feature_importance"].items()),
-                            columns=["Feature", "Importance"],
+                    # Display predictions
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.metric(
+                            "Predicted Expression Level",
+                            f"{result['predicted_expression_level']:.1f}%",
                         )
-                        fig_importance = px.bar(
-                            importance_df,
-                            x="Feature",
-                            y="Importance",
-                            title="Feature Importance for Prediction",
+                    with col2:
+                        st.metric(
+                            "Predicted Solubility",
+                            f"{result['predicted_solubility']:.1f}%",
                         )
-                        st.plotly_chart(fig_importance, use_container_width=True)
-                    else:
-                        error_detail = response.json().get("detail", "Unknown error")
-                        st.error(f"Error making prediction: {error_detail}")
-                except Exception as e:
-                    st.error(f"Error making prediction: {str(e)}")
-                    st.write("Full error details:", e)
-    else:
-        st.warning(
-            "Please make sure the FastAPI server is running on http://localhost:8000"
-        )
+
+                    # Display feature importance
+                    st.subheader("Feature Importance")
+                    importance_df = pd.DataFrame(
+                        list(result["feature_importance"].items()),
+                        columns=["Feature", "Importance"],
+                    )
+                    fig = px.bar(
+                        importance_df,
+                        x="Feature",
+                        y="Importance",
+                        title="Feature Importance Scores",
+                    )
+                    st.plotly_chart(fig)
+
+                else:
+                    st.error("Error making prediction")
+
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
 
 with tab2:
-    st.header("Prediction History")
+    # Load experiment data
+    @st.cache_data
+    def load_experiments() -> pd.DataFrame:
+        """
+        Load experiment data from the API.
 
-    # Load prediction history
-    history_df = prediction_history.load_history()
+        Returns:
+            DataFrame containing experiment metadata
+        """
+        try:
+            response = requests.get("http://localhost:8000/experiments")
+            if response.status_code == 200:
+                return pd.DataFrame(response.json())
+            else:
+                st.error("Error loading experiments from API")
+                return pd.DataFrame()
+        except Exception as e:
+            st.error(f"Error loading experiments: {str(e)}")
+            return pd.DataFrame()
 
-    if not history_df.empty:
-        # Display prediction history
-        st.subheader("Recent Predictions")
-        st.dataframe(history_df)
+    # Load experiments
+    experiments_df = load_experiments()
 
-        # Export options
-        st.subheader("Export History")
-        export_format = st.radio("Export Format", ["CSV", "JSON"])
-        if st.button("Export"):
-            filepath = prediction_history.export_history(format=export_format.lower())
-            if filepath:
-                with open(filepath, "rb") as f:
-                    st.download_button(
-                        label="Download Export",
-                        data=f,
-                        file_name=os.path.basename(filepath),
-                        mime=(
-                            "text/csv" if export_format == "CSV" else "application/json"
-                        ),
-                    )
-    else:
-        st.info(
-            "No prediction history available yet. Make some predictions to see them here!"
+    if not experiments_df.empty:
+        st.subheader("Training Data Sources")
+        st.dataframe(experiments_df)
+
+        # Display experiment details
+        selected_exp = st.selectbox(
+            "Select Experiment",
+            options=experiments_df["id"],
+            format_func=lambda x: f"{x} - {experiments_df[experiments_df['id'] == x]['title'].iloc[0]}",
         )
 
+        if selected_exp:
+            exp_data = experiments_df[experiments_df["id"] == selected_exp].iloc[0]
+            st.markdown(f"**Description:** {exp_data['description']}")
+            st.markdown(f"**Species:** {exp_data['species']}")
+            st.markdown(f"**Experiment Type:** {exp_data['experiment_type']}")
+    else:
+        st.error("No experiment data available")
 
 def create_app() -> FastAPI:
     """
