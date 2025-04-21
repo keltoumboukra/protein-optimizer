@@ -6,7 +6,7 @@ from the EMBL-EBI Expression Atlas database.
 """
 
 import requests
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Any
 import pandas as pd
 from datetime import datetime
 import logging
@@ -21,10 +21,15 @@ logger = logging.getLogger(__name__)
 class ExpressionAtlasClient:
     """Client for interacting with the Expression Atlas API."""
     
-    def __init__(self):
-        """Initialize the Expression Atlas client."""
-        self.base_url = "https://www.ebi.ac.uk/gxa/experiments-content"
-        self.logger = logging.getLogger(__name__)
+    def __init__(self, cache_dir: str = "cache"):
+        """Initialize the Expression Atlas client.
+        
+        Args:
+            cache_dir: Directory to cache downloaded data
+        """
+        self.base_url = "https://www.ebi.ac.uk/gxa/api"
+        self.cache_dir = cache_dir
+        os.makedirs(cache_dir, exist_ok=True)
         
     def _get_cached_response(self, cache_key: str) -> Optional[Dict]:
         """
@@ -190,72 +195,61 @@ class ExpressionAtlasClient:
         
         return df
     
-    def get_experiment_metadata(self, experiment_accession: str) -> Dict:
-        """
-        Get comprehensive metadata for an experiment.
+    def get_experiment_metadata(self, experiment_id: str) -> Dict[str, Any]:
+        """Get metadata for an experiment.
         
         Args:
-            experiment_accession: The experiment accession ID
+            experiment_id: The Expression Atlas experiment ID
             
         Returns:
             Dictionary containing experiment metadata
         """
-        experiment_data = self.get_experiment_data(experiment_accession)
+        url = f"{self.base_url}/experiments/{experiment_id}"
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
         
-        # Extract relevant metadata
-        metadata = {
-            'accession': experiment_accession,
-            'title': experiment_data.get('experimentDescription', ''),
-            'description': experiment_data.get('description', ''),
-            'species': experiment_data.get('species', ''),
-            'kingdom': experiment_data.get('kingdom', ''),
-            'experiment_type': experiment_data.get('experimentType', ''),
-            'technology_type': experiment_data.get('technologyType', []),
-            'number_of_assays': experiment_data.get('numberOfAssays', 0),
-            'experimental_factors': experiment_data.get('experimentalFactors', []),
-            'load_date': experiment_data.get('loadDate', ''),
-            'last_update': experiment_data.get('lastUpdate', '')
-        }
-        
-        return metadata
-    
     def download_expression_data(self, experiment_id: str) -> pd.DataFrame:
-        """
-        Download expression data for a specific experiment.
+        """Download expression data for an experiment.
         
         Args:
-            experiment_id: The Expression Atlas experiment ID (e.g., 'E-MTAB-4045')
+            experiment_id: The Expression Atlas experiment ID
             
         Returns:
-            DataFrame containing gene expression data with genes as rows and samples as columns
+            DataFrame containing expression data
         """
-        try:
-            url = f"{self.base_url}/{experiment_id}/resources/ExperimentDownloadSupplier.RnaSeqBaseline/tpms.tsv"
-            response = requests.get(url)
-            response.raise_for_status()
+        # First get the experiment details to find the correct download URL
+        metadata = self.get_experiment_metadata(experiment_id)
+        
+        # Get the download URL from the metadata
+        download_url = None
+        for resource in metadata.get('resources', []):
+            if resource.get('type') == 'ExperimentDownloadSupplier.RnaSeqBaseline':
+                download_url = resource.get('url')
+                break
+                
+        if not download_url:
+            raise ValueError(f"No RNA-seq baseline data found for experiment {experiment_id}")
             
-            # Convert response content to string
-            content = response.content.decode('utf-8')
-            
-            # Skip metadata lines starting with '#'
-            lines = content.split('\n')
-            data_lines = []
-            for line in lines:
-                if not line.startswith('#'):
-                    data_lines.append(line)
-            
-            # Create DataFrame from filtered content
-            df = pd.read_csv(
-                StringIO('\n'.join(data_lines)),
-                sep='\t',
-                index_col=0
-            )
-            
-            return df
-            
-        except requests.exceptions.RequestException as e:
-            self.logger.error(f"Error downloading expression data: {str(e)}")
-            raise
+        # Download the data
+        response = requests.get(download_url)
+        response.raise_for_status()
+        
+        # Parse the TSV data
+        df = pd.read_csv(pd.StringIO(response.text), sep='\t')
+        
+        # Extract gene IDs and expression values
+        gene_ids = df['Gene ID'].values
+        expression_values = df.iloc[:, 2:].values  # Skip Gene ID and Gene Name columns
+        
+        # Create DataFrame with genes as rows and samples as columns
+        result_df = pd.DataFrame(
+            expression_values,
+            index=gene_ids,
+            columns=df.columns[2:]
+        )
+        
+        return result_df
 
 def process_expression_data(df: pd.DataFrame) -> pd.DataFrame:
     """

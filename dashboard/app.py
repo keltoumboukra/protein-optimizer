@@ -184,7 +184,8 @@ with tab2:
         try:
             response = requests.get("http://localhost:8000/experiments")
             if response.status_code == 200:
-                return pd.DataFrame(response.json())
+                data = response.json()
+                return pd.DataFrame(data["experiments"])
             else:
                 st.error("Error loading experiments from API")
                 return pd.DataFrame()
@@ -203,14 +204,13 @@ with tab2:
         selected_exp = st.selectbox(
             "Select Experiment",
             options=experiments_df["id"],
-            format_func=lambda x: f"{x} - {experiments_df[experiments_df['id'] == x]['title'].iloc[0]}",
+            format_func=lambda x: f"{x} - {experiments_df[experiments_df['id'] == x]['name'].iloc[0]}",
         )
 
         if selected_exp:
             exp_data = experiments_df[experiments_df["id"] == selected_exp].iloc[0]
             st.markdown(f"**Description:** {exp_data['description']}")
             st.markdown(f"**Species:** {exp_data['species']}")
-            st.markdown(f"**Experiment Type:** {exp_data['experiment_type']}")
     else:
         st.error("No experiment data available")
 

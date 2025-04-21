@@ -1,22 +1,22 @@
 # Web Framework
-fastapi>=0.104.0
-uvicorn>=0.24.0
+fastapi==0.104.1
+uvicorn==0.24.0
 pydantic>=2.0.0
 
 # Data Processing and ML
-pandas>=2.1.0
-numpy>=1.24.0
-scikit-learn>=1.3.0
+pandas==2.1.3
+numpy==1.26.2
+scikit-learn==1.3.2
 
 # Dashboard
-streamlit>=1.28.0
-plotly>=5.18.0
-requests>=2.31.0
+streamlit==1.28.2
+plotly==5.18.0
+requests==2.31.0
 
 # Expression Atlas Integration
 requests-cache>=1.1.0  # For caching API responses
 tenacity>=8.2.0  # For retrying failed API calls
-python-dotenv>=1.0.0  # For environment variable management
+python-dotenv==1.0.0  # For environment variable management
 
 # Development Dependencies
 pytest>=7.4.0
@@ -24,3 +24,7 @@ pytest-cov>=4.1.0
 black>=23.10.0
 mypy>=1.6.0
 pandas-stubs 
+
+# Additional dependencies
+pyOpenSSL==23.2.0
+cryptography==41.0.5 
