@@ -176,3 +176,9 @@ cython_debug/
 # Project specific
 data/predictions/*.json
 data/predictions/*.csv
+
+# Expression Atlas data
+cache/
+data/
+examples/
+expression_data.csv
