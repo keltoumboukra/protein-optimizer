@@ -27,4 +27,8 @@ pandas-stubs
 
 # Additional dependencies
 pyOpenSSL==23.2.0
-cryptography==41.0.5 
+cryptography==41.0.5
+
+# Visualization
+matplotlib==3.7.1
+seaborn==0.12.2 

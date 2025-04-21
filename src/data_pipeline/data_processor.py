@@ -8,6 +8,7 @@ from src.config import (
     CATEGORICAL_FEATURES,
     DERIVED_FEATURES
 )
+from src.data_pipeline.expression_atlas import ExpressionAtlasClient
 
 class DataProcessor:
     def __init__(self, data_dir: str = DATA_DIR):
@@ -19,52 +20,41 @@ class DataProcessor:
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.logger = logging.getLogger(__name__)
+        self.atlas_client = ExpressionAtlasClient()
 
     def load_training_data(self, experiment_ids: Optional[List[str]] = None) -> pd.DataFrame:
         """Load and combine training data from multiple experiments.
         
         Args:
-            experiment_ids (List[str], optional): List of experiment IDs to load.
-                                                If None, uses all available experiments.
+            experiment_ids (List[str], optional): List of Expression Atlas experiment IDs.
+                                                If None, uses default set of experiments.
         
         Returns:
             pd.DataFrame: Combined and processed training data
         """
         try:
             if experiment_ids is None:
-                experiment_ids = [f.stem for f in self.data_dir.glob("*.csv")]
+                # Use a default set of protein expression experiments
+                experiment_ids = [
+                    'E-MTAB-4045',  # Example protein expression study
+                    'E-MTAB-5214',  # Another example study
+                ]
             
-            dfs = []
-            for exp_id in experiment_ids:
-                df = self._load_experiment_data(exp_id)
-                processed_df = self._process_experiment_data(df)
-                dfs.append(processed_df)
+            # Fetch data from Expression Atlas
+            raw_data = self.atlas_client.fetch_training_data(experiment_ids)
             
-            combined_df = pd.concat(dfs, ignore_index=True)
+            # Process the data
+            processed_data = self._process_experiment_data(raw_data)
+            
+            # Save processed data for future use
+            self.save_processed_data(processed_data, 'processed_training_data.csv')
+            
             self.logger.info(f"Successfully loaded and processed {len(experiment_ids)} experiments")
-            return combined_df
+            return processed_data
             
         except Exception as e:
             self.logger.error(f"Error loading training data: {str(e)}")
             raise
-
-    def _load_experiment_data(self, experiment_id: str) -> pd.DataFrame:
-        """Load data for a specific experiment.
-        
-        Args:
-            experiment_id (str): ID of the experiment to load
-        
-        Returns:
-            pd.DataFrame: Raw experiment data
-        
-        Raises:
-            FileNotFoundError: If experiment data file doesn't exist
-        """
-        file_path = self.data_dir / f"{experiment_id}.csv"
-        if not file_path.exists():
-            raise FileNotFoundError(f"Data file not found for experiment {experiment_id}")
-        
-        return pd.read_csv(file_path)
 
     def _process_experiment_data(self, df: pd.DataFrame) -> pd.DataFrame:
         """Clean and process experiment data.
@@ -103,19 +93,21 @@ class DataProcessor:
         Returns:
             pd.DataFrame: Dataframe with added derived features
         """
-        # Temperature categories
-        df['temperature_category'] = pd.cut(
-            df['temperature'],
-            bins=[0, 25, 30, 37, float('inf')],
-            labels=['low', 'medium-low', 'medium-high', 'high']
-        )
+        # Temperature categories (if temperature data is available)
+        if 'temperature' in df.columns:
+            df['temperature_category'] = pd.cut(
+                df['temperature'],
+                bins=[0, 25, 30, 37, float('inf')],
+                labels=['low', 'medium-low', 'medium-high', 'high']
+            )
         
-        # Induction duration categories
-        df['induction_duration'] = pd.cut(
-            df['induction_time'],
-            bins=[0, 2, 4, 8, float('inf')],
-            labels=['very_short', 'short', 'medium', 'long']
-        )
+        # Induction duration categories (if induction time is available)
+        if 'induction_time' in df.columns:
+            df['induction_duration'] = pd.cut(
+                df['induction_time'],
+                bins=[0, 2, 4, 8, float('inf')],
+                labels=['very_short', 'short', 'medium', 'long']
+            )
         
         # Combined score (if both metrics are available)
         if 'expression_level' in df.columns and 'solubility' in df.columns:

@@ -19,52 +19,98 @@ from io import StringIO
 logger = logging.getLogger(__name__)
 
 class ExpressionAtlasClient:
-    """Client for interacting with the Expression Atlas API."""
+    """Client for accessing Expression Atlas data."""
     
-    def __init__(self, cache_dir: str = "cache"):
-        """Initialize the Expression Atlas client.
-        
-        Args:
-            cache_dir: Directory to cache downloaded data
-        """
+    def __init__(self):
+        """Initialize the Expression Atlas client with base URL and logging."""
         self.base_url = "https://www.ebi.ac.uk/gxa/api"
-        self.cache_dir = cache_dir
-        os.makedirs(cache_dir, exist_ok=True)
+        self.logger = logging.getLogger(__name__)
         
-    def _get_cached_response(self, cache_key: str) -> Optional[Dict]:
+    def download_expression_data(self, experiment_id: str) -> pd.DataFrame:
         """
-        Get a cached API response if available.
+        Download gene expression data from Expression Atlas for a given experiment.
         
         Args:
-            cache_key: Unique key for the cached response
+            experiment_id (str): The Expression Atlas experiment ID (e.g., 'E-MTAB-4045')
             
         Returns:
-            Cached response or None if not available
+            pd.DataFrame: A DataFrame containing gene expression data with genes as rows
+                        and samples as columns.
+                        
+        Raises:
+            requests.exceptions.RequestException: If there's an error downloading the data
+            ValueError: If the data format is unexpected or cannot be parsed
         """
-        cache_file = self.cache_dir / f"{cache_key}.json"
-        if cache_file.exists():
-            try:
-                with open(cache_file, 'r') as f:
-                    return json.load(f)
-            except Exception as e:
-                logger.warning(f"Error reading cache file: {str(e)}")
-        return None
-    
-    def _cache_response(self, cache_key: str, response_data: Dict) -> None:
-        """
-        Cache an API response.
-        
-        Args:
-            cache_key: Unique key for the cached response
-            response_data: Response data to cache
-        """
-        cache_file = self.cache_dir / f"{cache_key}.json"
         try:
-            with open(cache_file, 'w') as f:
-                json.dump(response_data, f)
+            # First get experiment type
+            metadata_url = f"{self.base_url}/experiments/{experiment_id}"
+            self.logger.info(f"Getting experiment metadata from {metadata_url}")
+            metadata_response = requests.get(metadata_url)
+            metadata_response.raise_for_status()
+            metadata = metadata_response.json()
+            
+            # Construct the URL for expression data
+            if metadata.get('type') == 'RNASEQ_MRNA_BASELINE':
+                url = f"{self.base_url}/baseline/experiments/{experiment_id}/expression"
+            else:
+                url = f"{self.base_url}/differential/experiments/{experiment_id}/expression"
+                
+            self.logger.info(f"Downloading expression data from {url}")
+            
+            # Get expression data
+            params = {
+                'format': 'tsv',
+                'unit': 'TPM'
+            }
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            
+            # Parse TSV data
+            df = pd.read_csv(StringIO(response.text), sep='\t')
+            
+            # Process the data based on experiment type
+            if metadata.get('type') == 'RNASEQ_MRNA_BASELINE':
+                # For baseline experiments, data is already in TPM format
+                df.set_index(['Gene ID', 'Gene Name'], inplace=True)
+            else:
+                # For differential experiments, we need to extract TPM values
+                df = self._process_differential_data(df)
+            
+            # Convert expression values to float
+            for col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+            
+            self.logger.info(f"Successfully downloaded and parsed data for {experiment_id}")
+            return df
+            
+        except requests.exceptions.RequestException as e:
+            self.logger.error(f"Error downloading data: {str(e)}")
+            raise
+        except (ValueError, pd.errors.EmptyDataError) as e:
+            self.logger.error(f"Error parsing data: {str(e)}")
+            raise
         except Exception as e:
-            logger.warning(f"Error writing to cache file: {str(e)}")
-    
+            self.logger.error(f"Unexpected error: {str(e)}")
+            raise
+            
+    def _process_differential_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Process differential expression data to extract TPM values."""
+        # Extract TPM values from the data
+        tpm_cols = [col for col in df.columns if 'TPM' in col]
+        if not tpm_cols:
+            raise ValueError("No TPM values found in differential expression data")
+            
+        # Keep only Gene ID, Gene Name, and TPM columns
+        result_df = df[['Gene ID', 'Gene Name'] + tpm_cols].copy()
+        
+        # Clean up column names
+        result_df.columns = [col.replace('_TPM', '') for col in result_df.columns]
+        
+        # Set index
+        result_df.set_index(['Gene ID', 'Gene Name'], inplace=True)
+        
+        return result_df
+        
     def search_experiments(self, 
                           organism: Optional[str] = None,
                           experiment_type: Optional[str] = None,
@@ -209,47 +255,118 @@ class ExpressionAtlasClient:
         response.raise_for_status()
         return response.json()
         
-    def download_expression_data(self, experiment_id: str) -> pd.DataFrame:
-        """Download expression data for an experiment.
+    def fetch_training_data(self, experiment_ids: List[str]) -> pd.DataFrame:
+        """
+        Fetch and combine training data from multiple experiments.
         
         Args:
-            experiment_id: The Expression Atlas experiment ID
+            experiment_ids: List of experiment accession IDs
             
         Returns:
-            DataFrame containing expression data
+            Combined DataFrame with protein expression metrics
         """
-        # First get the experiment details to find the correct download URL
-        metadata = self.get_experiment_metadata(experiment_id)
+        all_data = []
         
-        # Get the download URL from the metadata
-        download_url = None
-        for resource in metadata.get('resources', []):
-            if resource.get('type') == 'ExperimentDownloadSupplier.RnaSeqBaseline':
-                download_url = resource.get('url')
-                break
+        for experiment_id in experiment_ids:
+            try:
+                logger.info(f"Processing experiment {experiment_id}")
                 
-        if not download_url:
-            raise ValueError(f"No RNA-seq baseline data found for experiment {experiment_id}")
+                # Get expression data
+                expression_df = self.download_expression_data(experiment_id)
+                
+                if expression_df is not None and not expression_df.empty:
+                    # Get experiment metadata for conditions
+                    metadata = self.get_experiment_metadata(experiment_id)
+                    
+                    # Process expression data into protein metrics
+                    processed_df = self._process_expression_data(expression_df, metadata)
+                    
+                    # Add experiment ID
+                    processed_df['experiment_id'] = experiment_id
+                    all_data.append(processed_df)
+                else:
+                    logger.warning(f"No data found for experiment {experiment_id}")
+                    
+            except Exception as e:
+                logger.error(f"Error processing experiment {experiment_id}: {str(e)}")
+                continue
+        
+        if not all_data:
+            raise ValueError("No valid data found in any of the experiments")
             
-        # Download the data
-        response = requests.get(download_url)
-        response.raise_for_status()
+        # Combine all processed data
+        combined_df = pd.concat(all_data, ignore_index=True)
+        logger.info(f"Successfully combined data from {len(all_data)} experiments")
         
-        # Parse the TSV data
-        df = pd.read_csv(pd.StringIO(response.text), sep='\t')
+        return combined_df
         
-        # Extract gene IDs and expression values
-        gene_ids = df['Gene ID'].values
-        expression_values = df.iloc[:, 2:].values  # Skip Gene ID and Gene Name columns
+    def _process_expression_data(self, df: pd.DataFrame, metadata: Dict) -> pd.DataFrame:
+        """
+        Process raw expression data into protein expression metrics.
         
-        # Create DataFrame with genes as rows and samples as columns
-        result_df = pd.DataFrame(
-            expression_values,
-            index=gene_ids,
-            columns=df.columns[2:]
-        )
+        Args:
+            df: Raw expression data DataFrame
+            metadata: Experiment metadata
+            
+        Returns:
+            DataFrame with protein expression metrics
+        """
+        # Extract experimental conditions from metadata
+        conditions = self._extract_conditions(metadata)
         
-        return result_df
+        # Calculate protein expression metrics
+        metrics_df = pd.DataFrame()
+        
+        # Calculate expression level (normalized TPM values)
+        metrics_df['expression_level'] = df.mean(axis=1).clip(0, 1)  # Normalize to 0-1
+        
+        # Calculate expression stability (inverse of coefficient of variation)
+        metrics_df['expression_stability'] = 1 - (df.std(axis=1) / df.mean(axis=1)).clip(0, 1)
+        
+        # Calculate solubility prediction (based on sequence properties if available)
+        # For now, we'll use expression stability as a proxy
+        metrics_df['solubility'] = metrics_df['expression_stability']
+        
+        # Add experimental conditions
+        for condition, value in conditions.items():
+            metrics_df[condition] = value
+            
+        return metrics_df
+        
+    def _extract_conditions(self, metadata: Dict) -> Dict:
+        """
+        Extract experimental conditions from metadata.
+        
+        Args:
+            metadata: Experiment metadata
+            
+        Returns:
+            Dictionary of experimental conditions
+        """
+        conditions = {}
+        
+        # Extract common experimental conditions
+        if 'experimentalConditions' in metadata:
+            for condition in metadata['experimentalConditions']:
+                name = condition.get('name', '').lower().replace(' ', '_')
+                value = condition.get('value', 'unknown')
+                conditions[name] = value
+                
+        # Add default values for missing conditions
+        default_conditions = {
+            'temperature': 37.0,  # Standard growth temperature
+            'induction_time': 4.0,  # Standard induction time
+            'host_organism': 'E. coli',  # Most common host
+            'vector_type': 'unknown',
+            'induction_condition': 'unknown',
+            'media_type': 'LB'  # Standard media
+        }
+        
+        for condition, default_value in default_conditions.items():
+            if condition not in conditions:
+                conditions[condition] = default_value
+                
+        return conditions
 
 def process_expression_data(df: pd.DataFrame) -> pd.DataFrame:
     """
