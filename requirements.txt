@@ -13,6 +13,11 @@ streamlit>=1.28.0
 plotly>=5.18.0
 requests>=2.31.0
 
+# Expression Atlas Integration
+requests-cache>=1.1.0  # For caching API responses
+tenacity>=8.2.0  # For retrying failed API calls
+python-dotenv>=1.0.0  # For environment variable management
+
 # Development Dependencies
 pytest>=7.4.0
 pytest-cov>=4.1.0
