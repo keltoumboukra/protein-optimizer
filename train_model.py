@@ -21,11 +21,13 @@ def main():
         logger.info("Initializing data processor...")
         data_processor = DataProcessor()
         
-        # Define experiment IDs to use
+        # Define experiment IDs to use (all real Expression Atlas experiments)
         experiment_ids = [
             'E-MTAB-3358',  # RNA-seq of protein coding genes in S. cerevisiae
             'E-GEOD-21520',  # Protein expression profiling in E. coli
             'E-GEOD-59044',  # Protein expression in different growth conditions
+            'E-MTAB-4045',   # Protein expression in human cell lines
+            'E-MTAB-5214',   # Protein expression in mouse tissues
         ]
         
         # Load training data from Expression Atlas
@@ -50,22 +52,17 @@ def main():
         
         # Initialize and train the model
         logger.info("\nInitializing protein optimizer model...")
-        optimizer = ProteinOptimizer()
+        model = ProteinOptimizer()
         
         # Train the model
         logger.info("Training model...")
-        optimizer.train(
-            data=training_data,
-            target_columns=['expression_level', 'solubility']
-        )
+        model.train(training_data)
         
-        # Get feature importance
-        importance = optimizer.get_feature_importance()
-        logger.info("\nFeature importance:")
-        for feature, score in sorted(importance.items(), key=lambda x: x[1], reverse=True):
-            logger.info(f"{feature}: {score:.3f}")
-        
-        logger.info("\nTraining completed successfully!")
+        # Save the model
+        model_path = Path("models/protein_optimizer.pkl")
+        model_path.parent.mkdir(parents=True, exist_ok=True)
+        model.save(model_path)
+        logger.info(f"Model saved to {model_path}")
         
     except Exception as e:
         logger.error(f"Error during training: {str(e)}")

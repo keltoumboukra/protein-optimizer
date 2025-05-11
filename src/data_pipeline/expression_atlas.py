@@ -21,10 +21,17 @@ logger = logging.getLogger(__name__)
 class ExpressionAtlasClient:
     """Client for accessing Expression Atlas data."""
     
-    def __init__(self):
-        """Initialize the Expression Atlas client with base URL and logging."""
+    def __init__(self, cache_dir: Optional[str] = None):
+        """Initialize the Expression Atlas client with base URL and logging.
+        
+        Args:
+            cache_dir (Optional[str]): Directory to cache API responses. If None, no caching is used.
+        """
         self.base_url = "https://www.ebi.ac.uk/gxa/api"
         self.logger = logging.getLogger(__name__)
+        self.cache_dir = Path(cache_dir) if cache_dir else None
+        if self.cache_dir:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
         
     def download_expression_data(self, experiment_id: str) -> pd.DataFrame:
         """
