@@ -1,0 +1,22 @@
+[
+  {
+    "host_organism":"E. coli",
+    "vector_type":"pET",
+    "induction_condition":"IPTG",
+    "media_type":"LB",
+    "temperature":37.0,
+    "induction_time":4.0,
+    "description":"",
+    "predicted_expression_level":38.9223759401,
+    "predicted_solubility":49.5521278523,
+    "feature_importance":{
+      "host_organism":0.0924672856,
+      "vector_type":0.0934981864,
+      "induction_condition":0.0853167862,
+      "media_type":0.0939015931,
+      "temperature":0.3173152304,
+      "induction_time":0.3175009183
+    },
+    "timestamp":"20250419_141218"
+  }
+]

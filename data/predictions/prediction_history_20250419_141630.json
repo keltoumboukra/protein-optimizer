@@ -1,0 +1,42 @@
+[
+  {
+    "host_organism":"HEK293",
+    "vector_type":"pET",
+    "induction_condition":"IPTG",
+    "media_type":"TB",
+    "temperature":37.0,
+    "induction_time":7.5,
+    "description":"",
+    "predicted_expression_level":50.5582672076,
+    "predicted_solubility":38.2622041397,
+    "feature_importance":{
+      "host_organism":0.0967928468,
+      "vector_type":0.0962353525,
+      "induction_condition":0.0895870609,
+      "media_type":0.0840953759,
+      "temperature":0.3030260741,
+      "induction_time":0.3302632899
+    },
+    "timestamp":"20250419_141626"
+  },
+  {
+    "host_organism":"E. coli",
+    "vector_type":"pET",
+    "induction_condition":"IPTG",
+    "media_type":"LB",
+    "temperature":37.0,
+    "induction_time":4.0,
+    "description":"",
+    "predicted_expression_level":38.9223759401,
+    "predicted_solubility":49.5521278523,
+    "feature_importance":{
+      "host_organism":0.0924672856,
+      "vector_type":0.0934981864,
+      "induction_condition":0.0853167862,
+      "media_type":0.0939015931,
+      "temperature":0.3173152304,
+      "induction_time":0.3175009183
+    },
+    "timestamp":"20250419_141218"
+  }
+]

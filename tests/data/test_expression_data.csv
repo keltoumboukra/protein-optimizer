@@ -1,0 +1,10 @@
+experiment_id,gene_id,gene_name,host_organism,experimental_condition,expression_level,solubility,vector_type,induction_condition,media_type,temperature,induction_time,experiment_type,technology_type
+E-MTAB-4045,AT1G01010,ANAC001,Arabidopsis thaliana,cotyledon stage,85.5,90.0,Native,Endogenous,Standard,37.0,24.0,RNA-seq,RNA sequencing
+E-MTAB-4045,AT1G01020,ARV1,Arabidopsis thaliana,cotyledon stage,75.2,80.0,Native,Endogenous,Standard,37.0,24.0,RNA-seq,RNA sequencing
+E-MTAB-4045,AT1G01030,NFYA1,Arabidopsis thaliana,cotyledon stage,65.8,70.0,Native,Endogenous,Standard,37.0,24.0,RNA-seq,RNA sequencing
+E-MTAB-5214,HGNC:5,A1BG,Homo sapiens,cell line A,90.1,95.0,Native,Endogenous,Standard,37.0,24.0,RNA-seq,RNA sequencing
+E-MTAB-5214,HGNC:8,A1CF,Homo sapiens,cell line A,82.3,85.0,Native,Endogenous,Standard,37.0,24.0,RNA-seq,RNA sequencing
+E-MTAB-5214,HGNC:10,A2M,Homo sapiens,cell line A,78.9,80.0,Native,Endogenous,Standard,37.0,24.0,RNA-seq,RNA sequencing
+E-MTAB-5432,MGI:87853,Acads,Mus musculus,liver tissue,88.7,92.0,Native,Endogenous,Standard,37.0,24.0,RNA-seq,RNA sequencing
+E-MTAB-5432,MGI:87854,Acadsb,Mus musculus,liver tissue,76.5,82.0,Native,Endogenous,Standard,37.0,24.0,RNA-seq,RNA sequencing
+E-MTAB-5432,MGI:87855,Acadl,Mus musculus,liver tissue,71.2,75.0,Native,Endogenous,Standard,37.0,24.0,RNA-seq,RNA sequencing 
