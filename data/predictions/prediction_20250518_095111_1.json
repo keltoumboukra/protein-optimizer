@@ -1,0 +1,20 @@
+{
+  "host_organism": "HEK293",
+  "vector_type": "pET",
+  "induction_condition": "IPTG",
+  "media_type": "LB",
+  "temperature": 31.5,
+  "induction_time": 4.0,
+  "description": "",
+  "predicted_expression_level": 44.60242297066854,
+  "predicted_solubility": 47.69923396999596,
+  "feature_importance": {
+    "host_organism": 0.09959984738995221,
+    "vector_type": 0.08809042918209348,
+    "induction_condition": 0.09067081944568178,
+    "media_type": 0.08616802884682057,
+    "temperature": 0.30119667992519616,
+    "induction_time": 0.33427419521025575
+  },
+  "timestamp": "20250518_095111"
+}

@@ -1,0 +1,3 @@
+0,1,2,3,4,5,6,7,8,9,10
+"{'host_organism': 'E. coli', 'vector_type': 'pET', 'induction_condition': 'IPTG', 'media_type': 'LB', 'temperature': 37.0, 'induction_time': 4.0, 'description': '', 'predicted_expression_level': 42.7357495882, 'predicted_solubility': 33.988370014, 'feature_importance': {'host_organism': 0.0870732551, 'vector_type': 0.0898458961, 'induction_condition': 0.0960049943, 'media_type': 0.0955353408, 'temperature': 0.3213017986, 'induction_time': 0.3102387152}, 'timestamp': '20250511_165930'}",,,,,,,,,,
+host_organism,vector_type,induction_condition,media_type,temperature,induction_time,description,predicted_expression_level,predicted_solubility,feature_importance,timestamp
