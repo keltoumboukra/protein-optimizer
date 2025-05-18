@@ -8,7 +8,6 @@ import csv
 import json
 import os
 
-from src.data_pipeline.mock_data import MockProteinExpressionDataGenerator
 from src.ml_models.predictor import ProteinExpressionPredictor
 from src.api.proteins_api import ProteinsAPIClient
 
@@ -18,11 +17,35 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Protein Expression Optimization API")
 
-# Initialize components
-generator = MockProteinExpressionDataGenerator(num_records=1000)
-train_data = generator.generate()
+# Load real protein data
+with open(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'assets', 'protein_details.json'), 'r') as f:
+    real_protein_data = json.load(f)
+
+# TODO: Convert real_protein_data to a DataFrame suitable for model training
+# This will depend on your model's expected input format
+# For now, we will extract a placeholder DataFrame
+def extract_training_df(protein_json_list):
+    # Example: extract accession and sequence length as features, add dummy labels
+    rows = []
+    for entry in protein_json_list:
+        details = entry['Details']
+        sequence = details.get('sequence', {}).get('sequence', '')
+        rows.append({
+            'accession': entry['Accession'],
+            'sequence_length': len(sequence),
+            # Add more real features as needed
+            'expression_level': None,  # Placeholder, update with real label if available
+            'solubility': None         # Placeholder, update with real label if available
+        })
+    return pd.DataFrame(rows)
+
+train_data = extract_training_df(real_protein_data)
 predictor = ProteinExpressionPredictor()
-predictor.train(train_data)
+# Only train if real labels are available
+if 'expression_level' in train_data and train_data['expression_level'].notnull().any():
+    predictor.train(train_data)
+else:
+    logger.warning('No real expression labels available for training. Model not trained.')
 
 
 class ProteinExpressionRequest(BaseModel):
@@ -166,18 +189,12 @@ async def generate_sample() -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: A sample experiment with all required fields and example values
     """
-    sample = generator.generate(num_records=1).iloc[0]
-    return {
-        "host_organism": sample["host_organism"],
-        "vector_type": sample["vector_type"],
-        "induction_condition": sample["induction_condition"],
-        "media_type": sample["media_type"],
-        "temperature": sample["temperature"],
-        "induction_time": sample["induction_time"],
-        "description": sample["description"],
-        "expression_level": sample["expression_level"],
-        "solubility": sample["solubility"],
-    }
+    # Instead of generating a sample, return the first real protein entry as an example
+    if len(real_protein_data) > 0:
+        details = real_protein_data[0]['Details']
+        return details
+    else:
+        return {"error": "No real protein data available."}
 
 
 def fetch_and_save_protein_details(tsv_path: str, output_json: str):
