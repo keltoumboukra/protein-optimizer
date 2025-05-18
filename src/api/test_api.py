@@ -6,6 +6,7 @@ from api.proteins_api import ProteinsAPIClient
 import json
 from typing import Dict, List, Union
 import time
+import csv
 
 def print_json(data: Union[Dict, List]) -> None:
     """Pretty print JSON data"""
@@ -55,5 +56,24 @@ def test_api_functionality():
             else:
                 print("No protein features available")
 
+def test_batch_protein_details():
+    tsv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'assets', 'proteins_of_interest.tsv')
+    client = ProteinsAPIClient()
+    with open(tsv_path, 'r') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        for row in reader:
+            protein = row['Protein Name']
+            organism = row['Organism']
+            accession = row['UniProtKB Accession'].strip()
+            if not accession:
+                print(f"Skipping {protein} ({organism}): No accession provided.")
+                continue
+            print(f"\n=== Fetching details for {protein} ({organism}) [{accession}] ===")
+            details = client.get_protein_details(accession)
+            if details:
+                print_json(details)
+            else:
+                print(f"No details found for {accession}")
+
 if __name__ == "__main__":
-    test_api_functionality() 
+    test_batch_protein_details() 
