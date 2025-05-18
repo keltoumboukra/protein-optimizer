@@ -4,9 +4,13 @@ from typing import List, Optional, Dict, Any
 import pandas as pd
 from datetime import datetime
 import logging
+import csv
+import json
+import os
 
 from src.data_pipeline.mock_data import MockProteinExpressionDataGenerator
 from src.ml_models.predictor import ProteinExpressionPredictor
+from src.api.proteins_api import ProteinsAPIClient
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -176,7 +180,46 @@ async def generate_sample() -> Dict[str, Any]:
     }
 
 
-if __name__ == "__main__":
-    import uvicorn
+def fetch_and_save_protein_details(tsv_path: str, output_json: str):
+    client = ProteinsAPIClient()
+    results = []
+    with open(tsv_path, 'r') as f:
+        reader = csv.DictReader(f, delimiter='\t')
+        for row in reader:
+            protein = row['Protein Name']
+            organism = row['Organism']
+            accession = row['UniProtKB Accession'].strip()
+            if not accession:
+                logger.info(f"Skipping {protein} ({organism}): No accession provided.")
+                continue
+            logger.info(f"Fetching details for {protein} ({organism}) [{accession}]")
+            details = client.get_protein_details(accession)
+            if details:
+                results.append({
+                    'Protein Name': protein,
+                    'Organism': organism,
+                    'Accession': accession,
+                    'Details': details
+                })
+            else:
+                logger.warning(f"No details found for {accession}")
+    with open(output_json, 'w') as out:
+        json.dump(results, out, indent=2)
+    logger.info(f"Saved details for {len(results)} proteins to {output_json}")
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Protein batch fetcher and API server")
+    parser.add_argument('--fetch', action='store_true', help='Fetch and save protein details from TSV')
+    parser.add_argument('--tsv', type=str, default=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'assets', 'proteins_of_interest.tsv'), help='Path to TSV file')
+    parser.add_argument('--out', type=str, default=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'assets', 'protein_details.json'), help='Output JSON file')
+    parser.add_argument('--host', type=str, default='0.0.0.0', help='Host for API server')
+    parser.add_argument('--port', type=int, default=8000, help='Port for API server')
+    args = parser.parse_args()
+
+    if args.fetch:
+        fetch_and_save_protein_details(args.tsv, args.out)
+    else:
+        import uvicorn
+        uvicorn.run(app, host=args.host, port=args.port)
