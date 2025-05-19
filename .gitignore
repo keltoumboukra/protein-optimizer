@@ -173,3 +173,4 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 assets/protein_details.json
+.DS_Store
