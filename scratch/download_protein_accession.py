@@ -5,7 +5,7 @@ import time
 # Define the API endpoint and parameters
 url = "https://rest.uniprot.org/uniprotkb/search"
 params = {
-    "query": 'organism_id:9606 AND reviewed:true',
+    "query": 'organism_id:9541 AND reviewed:true',  # Macaca fascicularis (Crab-eating macaque) - widely used in biomedical research
     "format": "tsv",
     "fields": "accession,protein_name,organism_name",
     "size": 500  # UniProt max per request
