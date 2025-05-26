@@ -11,6 +11,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![codecov](https://codecov.io/gh/keltoumboukra/protein-optimizer/graph/badge.svg?token=AS4ZV2WHT1)](https://codecov.io/gh/keltoumboukra/protein-optimizer)
 
+
 A data-driven platform that helps researchers predict the presence of post-translational modification (PTM) sites—specifically, N-linked glycosylation sites—in proteins using real data from the EBI/UniProt Proteins API. The pipeline extracts biologically relevant features from protein annotations and sequence, enabling supervised machine learning for PTM site prediction. The project is designed to be extensible, with future plans to incorporate AlphaFold structural features.
 
 ![Protein Expression Optimization System Architecture](./assets/system_architecture.png)
@@ -136,6 +137,20 @@ Check type annotations with mypy:
 ```bash
 mypy src/
 ```
+
+### Configuration Files
+- `pytest.ini`: Test configuration
+- `mypy.ini`: Type checking settings
+- `pyproject.toml`: Code formatting rules
+
+## Code Coverage
+
+I maintain test coverage across the codebase. The coverage report helps me ensure:
+- All critical functionality is tested
+- Edge cases are handled properly
+- Code quality is maintained
+
+You can view the detailed coverage report on [Codecov](https://codecov.io/gh/keltoumboukra/protein-optimizer).
 
 ## Future Roadmap
 
