@@ -172,5 +172,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Project specific
+# Data files
 assets/protein_details.json
+data/predictions/*.json
+data/predictions/*.csv
+
+# System files
 .DS_Store
